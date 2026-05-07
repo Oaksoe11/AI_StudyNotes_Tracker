@@ -3,10 +3,18 @@
 import { FormEvent, useState } from "react";
 import { Upload } from "lucide-react";
 
-import { uploadPdf } from "@/lib/api";
+import { Tone, uploadPdf } from "@/lib/api";
+
+const tones: { value: Tone; label: string }[] = [
+  { value: "concise", label: "Concise" },
+  { value: "detailed", label: "Detailed" },
+  { value: "exam_prep", label: "Exam prep" },
+  { value: "beginner", label: "Beginner" }
+];
 
 export function PdfUpload({ folderId }: { folderId: string }) {
   const [file, setFile] = useState<File | null>(null);
+  const [tone, setTone] = useState<Tone>("concise");
   const [status, setStatus] = useState<"idle" | "uploading" | "uploaded" | "error">("idle");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -20,7 +28,7 @@ export function PdfUpload({ folderId }: { folderId: string }) {
     setStatus("uploading");
 
     try {
-      await uploadPdf(folderId, file);
+      await uploadPdf(folderId, tone, file);
       setStatus("uploaded");
     } catch {
       setStatus("error");
@@ -30,13 +38,24 @@ export function PdfUpload({ folderId }: { folderId: string }) {
   return (
     <form onSubmit={handleSubmit} className="rounded-md border border-slate-200 bg-white p-4">
       <label className="block text-sm font-medium">Lecture PDF</label>
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_180px_auto]">
         <input
           type="file"
           accept="application/pdf"
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           className="min-h-11 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
         />
+        <select
+          value={tone}
+          onChange={(event) => setTone(event.target.value as Tone)}
+          className="min-h-11 rounded-md border border-slate-300 px-3 text-sm"
+        >
+          {tones.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           disabled={status === "uploading"}
@@ -51,4 +70,3 @@ export function PdfUpload({ folderId }: { folderId: string }) {
     </form>
   );
 }
-

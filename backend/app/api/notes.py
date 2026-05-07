@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
 
+from app.core.config import settings
 from app.core.supabase import get_supabase
-from app.models.schemas import GenerateNotesRequest
-from app.services.gemini_service import generate_notes
+from app.models.schemas import DocumentStatus, GenerateNotesRequest, NoteTone
+from app.services.gemini_service import GeminiGenerationError, generate_notes
 
 router = APIRouter()
 
@@ -23,31 +24,63 @@ def generate_document_notes(payload: GenerateNotesRequest) -> dict:
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    pages_response = (
-        supabase.table("document_pages")
-        .select("*")
-        .eq("document_id", payload.document_id)
-        .order("page_number")
-        .execute()
-    )
-
-    if not pages_response.data:
-        raise HTTPException(status_code=400, detail="Extract PDF content before generating notes.")
-
-    content = generate_notes(pages_response.data, payload.tone)
-    note_response = supabase.table("notes").insert(
+    tone = payload.tone or NoteTone(document.get("selected_tone") or NoteTone.concise.value)
+    supabase.table("documents").update(
         {
-            "folder_id": document["folder_id"],
-            "document_id": payload.document_id,
-            "title": payload.title or document["file_name"].removesuffix(".pdf"),
-            "tone": payload.tone.value,
-            "content": content,
+            "status": DocumentStatus.generating.value,
+            "selected_tone": tone.value,
+            "failure_reason": None,
         }
-    ).execute()
+    ).eq("id", payload.document_id).execute()
 
-    supabase.table("documents").update({"status": "notes_ready"}).eq("id", payload.document_id).execute()
+    try:
+        pages_response = (
+            supabase.table("document_pages")
+            .select("*")
+            .eq("document_id", payload.document_id)
+            .order("page_number")
+            .execute()
+        )
 
-    return note_response.data[0]
+        if not pages_response.data:
+            raise HTTPException(status_code=400, detail="Extract PDF content before generating notes.")
+
+        slides = _attach_slide_images(supabase, pages_response.data)
+        content = generate_notes(slides, tone)
+        note_response = supabase.table("notes").insert(
+            {
+                "folder_id": document["folder_id"],
+                "document_id": payload.document_id,
+                "title": payload.title or document["file_name"].removesuffix(".pdf"),
+                "tone": tone.value,
+                "content": content,
+            }
+        ).execute()
+
+        note = note_response.data[0]
+        supabase.table("documents").update(
+            {"status": DocumentStatus.completed.value, "failure_reason": None}
+        ).eq("id", payload.document_id).execute()
+
+        return {"note_id": note["id"], "note": note}
+    except HTTPException as exc:
+        supabase.table("documents").update(
+            {"status": DocumentStatus.failed.value, "failure_reason": exc.detail}
+        ).eq("id", payload.document_id).execute()
+        raise
+    except GeminiGenerationError as exc:
+        supabase.table("documents").update(
+            {"status": DocumentStatus.failed.value, "failure_reason": str(exc)}
+        ).eq("id", payload.document_id).execute()
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        supabase.table("documents").update(
+            {
+                "status": DocumentStatus.failed.value,
+                "failure_reason": f"Note generation failed: {exc}",
+            }
+        ).eq("id", payload.document_id).execute()
+        raise HTTPException(status_code=500, detail="Note generation failed.") from exc
 
 
 @router.get("/{note_id}")
@@ -72,3 +105,17 @@ def update_note(note_id: str, payload: dict) -> dict:
 
     return response.data[0]
 
+
+def _attach_slide_images(supabase, slides: list[dict]) -> list[dict]:
+    enriched = []
+
+    for index, slide in enumerate(slides):
+        if index < settings.gemini_max_images and slide.get("image_storage_path"):
+            image_bytes = supabase.storage.from_(settings.supabase_storage_bucket).download(
+                slide["image_storage_path"]
+            )
+            enriched.append({**slide, "image_bytes": image_bytes})
+        else:
+            enriched.append(slide)
+
+    return enriched

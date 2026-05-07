@@ -12,9 +12,10 @@ export async function apiGet<T>(path: string): Promise<T> {
   return response.json();
 }
 
-export async function uploadPdf(folderId: string, file: File) {
+export async function uploadPdf(folderId: string, tone: Tone, file: File) {
   const formData = new FormData();
   formData.append("folder_id", folderId);
+  formData.append("tone", tone);
   formData.append("file", file);
 
   const response = await fetch(`${apiUrl}/documents/upload`, {
@@ -43,3 +44,14 @@ export async function generateNotes(documentId: string, tone: Tone) {
   return response.json();
 }
 
+export async function extractDocument(documentId: string) {
+  const response = await fetch(`${apiUrl}/documents/${documentId}/extract`, {
+    method: "POST"
+  });
+
+  if (!response.ok) {
+    throw new Error("PDF extraction failed");
+  }
+
+  return response.json();
+}

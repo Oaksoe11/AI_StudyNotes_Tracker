@@ -4,7 +4,9 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.core.config import settings
 from app.core.supabase import get_supabase
+from app.models.schemas import DocumentStatus, NoteTone
 from app.services.pdf_service import extract_pdf_pages
+from app.services.storage_service import get_public_url, upload_bytes
 
 router = APIRouter()
 
@@ -17,7 +19,11 @@ def list_documents() -> list[dict]:
 
 
 @router.post("/upload")
-async def upload_document(folder_id: str = Form(...), file: UploadFile = File(...)) -> dict:
+async def upload_document(
+    folder_id: str = Form(...),
+    tone: NoteTone = Form(NoteTone.concise),
+    file: UploadFile = File(...),
+) -> dict:
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
 
@@ -26,11 +32,13 @@ async def upload_document(folder_id: str = Form(...), file: UploadFile = File(..
     storage_path = f"{folder_id}/{document_id}/{file.filename}"
     supabase = get_supabase()
 
-    supabase.storage.from_(settings.supabase_storage_bucket).upload(
+    upload_bytes(
+        supabase,
         storage_path,
         pdf_bytes,
-        {"content-type": "application/pdf"},
+        "application/pdf",
     )
+    file_url = get_public_url(supabase, storage_path)
 
     document_response = supabase.table("documents").insert(
         {
@@ -38,11 +46,14 @@ async def upload_document(folder_id: str = Form(...), file: UploadFile = File(..
             "folder_id": folder_id,
             "file_name": file.filename,
             "storage_path": storage_path,
-            "status": "uploaded",
+            "file_url": file_url,
+            "selected_tone": tone.value,
+            "status": DocumentStatus.uploaded.value,
         }
     ).execute()
 
-    return document_response.data[0]
+    document = document_response.data[0]
+    return {"document_id": document["id"], "document": document}
 
 
 @router.post("/{document_id}/extract")
@@ -54,33 +65,48 @@ def extract_document(document_id: str) -> dict:
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    pdf_bytes = supabase.storage.from_(settings.supabase_storage_bucket).download(document["storage_path"])
-    pages = extract_pdf_pages(pdf_bytes)
-
-    slide_bucket = f"{document['folder_id']}/{document_id}/slides"
-    page_rows = [
-        {
-            "document_id": document_id,
-            "page_number": page["page_number"],
-            "text": page["text"],
-            "image_storage_path": f"{slide_bucket}/{page['image_name']}",
-        }
-        for page in pages
-    ]
-
-    for page in pages:
-        supabase.storage.from_(settings.supabase_storage_bucket).upload(
-            f"{slide_bucket}/{page['image_name']}",
-            page["image_bytes"],
-            {"content-type": "image/png"},
-        )
-
-    if page_rows:
-        supabase.table("document_pages").insert(page_rows).execute()
-
     supabase.table("documents").update(
-        {"status": "extracted", "page_count": len(page_rows)}
+        {"status": DocumentStatus.extracting.value, "failure_reason": None}
     ).eq("id", document_id).execute()
+
+    try:
+        pdf_bytes = supabase.storage.from_(settings.supabase_storage_bucket).download(document["storage_path"])
+        pages = extract_pdf_pages(pdf_bytes)
+
+        slide_bucket = f"{document['folder_id']}/{document_id}/slides"
+        page_rows = []
+
+        for page in pages:
+            image_storage_path = f"{slide_bucket}/{page['image_name']}"
+            upload_bytes(supabase, image_storage_path, page["image_bytes"], "image/png")
+            page_rows.append(
+                {
+                    "document_id": document_id,
+                    "page_number": page["page_number"],
+                    "text": page["text"],
+                    "image_storage_path": image_storage_path,
+                    "image_url": get_public_url(supabase, image_storage_path),
+                }
+            )
+
+        if page_rows:
+            supabase.table("document_pages").upsert(page_rows, on_conflict="document_id,page_number").execute()
+
+        supabase.table("documents").update(
+            {
+                "status": DocumentStatus.uploaded.value,
+                "page_count": len(page_rows),
+                "failure_reason": None,
+            }
+        ).eq("id", document_id).execute()
+    except Exception as exc:
+        supabase.table("documents").update(
+            {
+                "status": DocumentStatus.failed.value,
+                "failure_reason": f"PDF extraction failed: {exc}",
+            }
+        ).eq("id", document_id).execute()
+        raise HTTPException(status_code=500, detail="PDF extraction failed.") from exc
 
     return {"document_id": document_id, "page_count": len(page_rows)}
 
