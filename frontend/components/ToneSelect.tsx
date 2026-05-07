@@ -28,13 +28,13 @@ export function ToneSelect({ documentId }: { documentId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 sm:flex-row sm:items-end">
+    <div className="flex flex-col gap-3 rounded-md border border-line bg-card shadow-sm p-4 sm:flex-row sm:items-end">
       <label className="flex-1 text-sm font-medium">
         Note tone
         <select
           value={tone}
           onChange={(event) => setTone(event.target.value as Tone)}
-          className="mt-2 min-h-11 w-full rounded-md border border-slate-300 px-3 text-sm"
+          className="mt-2 min-h-11 w-full rounded-md border border-line px-3 text-sm"
         >
           {tones.map((item) => (
             <option key={item.value} value={item.value}>
@@ -47,7 +47,7 @@ export function ToneSelect({ documentId }: { documentId: string }) {
         type="button"
         onClick={handleGenerate}
         disabled={status === "loading"}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-medium text-white disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-coral px-4 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
       >
         <WandSparkles size={16} />
         {status === "loading" ? "Generating" : "Generate notes"}

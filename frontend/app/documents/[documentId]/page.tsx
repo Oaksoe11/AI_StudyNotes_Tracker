@@ -40,7 +40,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         </span>
         <div>
           <h1 className="text-3xl font-semibold tracking-normal">{data.document.file_name}</h1>
-          <p className="text-slate-600">Status: {data.document.status}</p>
+          <p className="text-muted">Status: {data.document.status}</p>
         </div>
       </div>
 
@@ -59,27 +59,27 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
       <ExtractButton documentId={data.document.id} />
       <ToneSelect documentId={data.document.id} />
 
-      <section className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+      <section className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
         <h2 className="font-semibold">Extracted slides</h2>
         {data.pages.length ? (
           data.pages.slice(0, 8).map((page) => (
-            <div key={page.id} className="rounded-md border border-slate-200 p-3">
+            <div key={page.id} className="rounded-md border border-line p-3">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-medium">Slide {page.page_number}</h3>
-                {page.image_url ? <span className="text-xs text-slate-500">Image saved</span> : null}
+                {page.image_url ? <span className="text-xs text-muted">Image saved</span> : null}
               </div>
-              <p className="mt-2 line-clamp-3 text-sm text-slate-600">{page.text || "No extractable text"}</p>
+              <p className="mt-2 line-clamp-3 text-sm text-muted">{page.text || "No extractable text"}</p>
             </div>
           ))
         ) : (
-          <p className="text-sm text-slate-600">Extract the PDF to save slide text and images.</p>
+          <p className="text-sm text-muted">Extract the PDF to save slide text and images.</p>
         )}
       </section>
 
-      <section className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+      <section className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
         <h2 className="font-semibold">Generated notes</h2>
         {data.notes.map((note) => (
-          <Link key={note.id} href={`/notes/${note.id}`} className="block rounded-md border border-slate-200 p-3 hover:border-ink">
+          <Link key={note.id} href={`/notes/${note.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
             {note.title}
           </Link>
         ))}
@@ -90,8 +90,8 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
-      <p className="text-sm text-slate-500">{label}</p>
+    <div className="rounded-md border border-line bg-card shadow-sm p-4">
+      <p className="text-sm text-muted">{label}</p>
       <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
   );

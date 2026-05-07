@@ -28,7 +28,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-md border border-slate-200 bg-white p-6">
+    <form onSubmit={handleSubmit} className="rounded-md border border-line bg-card shadow-sm p-6">
       <h2 className="text-xl font-semibold">Login</h2>
       <label className="mt-5 block text-sm font-medium">
         Email
@@ -36,7 +36,7 @@ export function LoginForm() {
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="mt-2 min-h-11 w-full rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-ink"
+          className="mt-2 min-h-11 w-full rounded-md border border-line px-3 text-sm outline-none focus:border-coral"
           placeholder="you@example.com"
           required
         />
@@ -44,7 +44,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-medium text-white disabled:opacity-60"
+        className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-coral px-4 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
       >
         <LogIn size={16} />
         {status === "loading" ? "Sending link" : "Send magic link"}

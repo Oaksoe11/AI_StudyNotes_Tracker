@@ -36,11 +36,11 @@ export default async function DashboardPage() {
       <section className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h1 className="text-3xl font-semibold tracking-normal">Dashboard</h1>
-          <p className="mt-2 text-slate-600">Folders, PDFs, and generated notes for your current study flow.</p>
+          <p className="mt-2 text-muted">Folders, PDFs, and generated notes for your current study flow.</p>
         </div>
         <Link
           href="/folders"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-medium text-white"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-coral px-4 text-sm font-medium text-white shadow-sm transition hover:bg-berry"
         >
           <Plus size={16} />
           New folder
@@ -58,24 +58,24 @@ export default async function DashboardPage() {
       <section className="grid gap-6 lg:grid-cols-3">
         <Panel title="Folders">
           {folders.map((folder) => (
-            <Link key={folder.id} href={`/folders/${folder.id}`} className="block rounded-md border border-slate-200 p-3 hover:border-ink">
+            <Link key={folder.id} href={`/folders/${folder.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
               {folder.name}
             </Link>
           ))}
         </Panel>
         <Panel title="Recent documents">
           {documents.map((document) => (
-            <Link key={document.id} href={`/documents/${document.id}`} className="block rounded-md border border-slate-200 p-3 hover:border-ink">
+            <Link key={document.id} href={`/documents/${document.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
               <span className="block font-medium">{document.file_name}</span>
-              <span className="text-sm text-slate-500">{document.status}</span>
+              <span className="text-sm text-muted">{document.status}</span>
             </Link>
           ))}
         </Panel>
         <Panel title="Recent notes">
           {notes.map((note) => (
-            <Link key={note.id} href={`/notes/${note.id}`} className="block rounded-md border border-slate-200 p-3 hover:border-ink">
+            <Link key={note.id} href={`/notes/${note.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
               <span className="block font-medium">{note.title}</span>
-              <span className="text-sm text-slate-500">{note.tone}</span>
+              <span className="text-sm text-muted">{note.tone}</span>
             </Link>
           ))}
         </Panel>
@@ -90,9 +90,9 @@ export default async function DashboardPage() {
 
 function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-md border border-line bg-card shadow-sm p-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">{label}</span>
+        <span className="text-sm text-muted">{label}</span>
         <span className="text-coral">{icon}</span>
       </div>
       <p className="mt-3 text-3xl font-semibold">{value}</p>
@@ -102,7 +102,7 @@ function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; v
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+    <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
       <h2 className="font-semibold">{title}</h2>
       <div className="space-y-2">{children}</div>
     </div>

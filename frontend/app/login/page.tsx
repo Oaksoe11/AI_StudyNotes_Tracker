@@ -6,7 +6,7 @@ export default function LoginPage() {
       <div>
         <p className="text-sm font-medium uppercase tracking-wide text-coral">Lecture notes, faster</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-normal">Turn PDFs into useful study notes.</h1>
-        <p className="mt-4 max-w-xl text-slate-600">
+        <p className="mt-4 max-w-xl text-muted">
           Sign in with Supabase auth, organize lectures by course, and generate Markdown notes from uploaded slides.
         </p>
       </div>

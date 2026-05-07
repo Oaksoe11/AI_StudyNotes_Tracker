@@ -33,18 +33,18 @@ export function FolderForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 sm:flex-row">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-md border border-line bg-card shadow-sm p-4 sm:flex-row">
       <input
         value={name}
         onChange={(event) => setName(event.target.value)}
         placeholder="Course folder name"
-        className="min-h-11 flex-1 rounded-md border border-slate-300 px-3 text-sm outline-none focus:border-ink"
+        className="min-h-11 flex-1 rounded-md border border-line px-3 text-sm outline-none focus:border-coral"
         required
       />
       <button
         type="submit"
         disabled={status === "saving"}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-medium text-white disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-coral px-4 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
       >
         <Plus size={16} />
         {status === "saving" ? "Creating" : "Create"}

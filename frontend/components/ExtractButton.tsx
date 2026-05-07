@@ -20,12 +20,12 @@ export function ExtractButton({ documentId }: { documentId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-slate-200 bg-white p-4 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-2 rounded-md border border-line bg-card shadow-sm p-4 sm:flex-row sm:items-center">
       <button
         type="button"
         onClick={handleExtract}
         disabled={status === "loading"}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-coral px-4 text-sm font-medium text-white disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-coral px-4 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
       >
         <ScanText size={16} />
         {status === "loading" ? "Extracting" : "Extract PDF"}

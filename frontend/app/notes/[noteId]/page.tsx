@@ -33,12 +33,12 @@ export default async function NoteDetailPage({ params }: { params: Promise<{ not
         </span>
         <div>
           <h1 className="text-3xl font-semibold tracking-normal">{note.title}</h1>
-          <p className="text-slate-600">Tone: {note.tone}</p>
+          <p className="text-muted">Tone: {note.tone}</p>
         </div>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white p-6">
-        <div className="prose max-w-none prose-slate">
+      <div className="rounded-md border border-line bg-card shadow-sm p-6">
+        <div className="prose max-w-none prose-neutral dark:prose-invert">
           <ReactMarkdown>{note.content}</ReactMarkdown>
         </div>
       </div>

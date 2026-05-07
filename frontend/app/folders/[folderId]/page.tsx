@@ -33,35 +33,35 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
         </span>
         <div>
           <h1 className="text-3xl font-semibold tracking-normal">{data.folder.name}</h1>
-          <p className="text-slate-600">Upload PDFs and review generated notes.</p>
+          <p className="text-muted">Upload PDFs and review generated notes.</p>
         </div>
       </div>
 
       <PdfUpload folderId={data.folder.id} />
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+        <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
           <h2 className="font-semibold">PDFs</h2>
           {data.documents.length ? (
             data.documents.map((document) => (
-              <Link key={document.id} href={`/documents/${document.id}`} className="flex items-center gap-3 rounded-md border border-slate-200 p-3 hover:border-ink">
+              <Link key={document.id} href={`/documents/${document.id}`} className="flex items-center gap-3 rounded-md border border-line p-3 hover:border-coral">
                 <FileText size={18} className="text-coral" />
                 <span className="flex-1">{document.file_name}</span>
-                <span className="text-sm text-slate-500">{document.status}</span>
+                <span className="text-sm text-muted">{document.status}</span>
               </Link>
             ))
           ) : (
             <EmptyState icon={<FileText size={20} />} title="No PDFs" description="Upload a lecture PDF for this folder." />
           )}
         </div>
-        <div className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+        <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
           <h2 className="font-semibold">Notes</h2>
           {data.notes.length ? (
             data.notes.map((note) => (
-              <Link key={note.id} href={`/notes/${note.id}`} className="flex items-center gap-3 rounded-md border border-slate-200 p-3 hover:border-ink">
+              <Link key={note.id} href={`/notes/${note.id}`} className="flex items-center gap-3 rounded-md border border-line p-3 hover:border-coral">
                 <BookOpen size={18} className="text-coral" />
                 <span className="flex-1">{note.title}</span>
-                <span className="text-sm text-slate-500">{note.tone}</span>
+                <span className="text-sm text-muted">{note.tone}</span>
               </Link>
             ))
           ) : (
