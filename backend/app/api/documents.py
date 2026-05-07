@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 
 from app.core.config import settings
 from app.core.supabase import get_supabase
@@ -20,6 +20,7 @@ def list_documents() -> list[dict]:
 
 @router.post("/upload")
 async def upload_document(
+    background_tasks: BackgroundTasks,
     folder_id: str = Form(...),
     tone: NoteTone = Form(NoteTone.concise),
     file: UploadFile = File(...),
@@ -58,17 +59,36 @@ async def upload_document(
         document_response = supabase.table("documents").insert(document_row).execute()
 
     document = document_response.data[0]
-    return {"document_id": document["id"], "document": document}
+    background_tasks.add_task(process_document_extraction, document["id"])
+
+    return {
+        "document_id": document["id"],
+        "document": document,
+        "processing_started": True,
+    }
 
 
 @router.post("/{document_id}/extract")
 def extract_document(document_id: str) -> dict:
+    try:
+        page_count = process_document_extraction(document_id, raise_errors=True)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="PDF extraction failed.") from exc
+
+    return {"document_id": document_id, "page_count": page_count}
+
+
+def process_document_extraction(document_id: str, raise_errors: bool = False) -> int:
     supabase = get_supabase()
     document_response = supabase.table("documents").select("*").eq("id", document_id).single().execute()
     document = document_response.data
 
     if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
+        if raise_errors:
+            raise ValueError("Document not found")
+        return 0
 
     supabase.table("documents").update(
         {"status": DocumentStatus.extracting.value, "failure_reason": None}
@@ -126,9 +146,11 @@ def extract_document(document_id: str) -> dict:
                 "failure_reason": f"PDF extraction failed: {exc}",
             }
         ).eq("id", document_id).execute()
-        raise HTTPException(status_code=500, detail="PDF extraction failed.") from exc
+        if raise_errors:
+            raise
+        return 0
 
-    return {"document_id": document_id, "page_count": len(page_rows)}
+    return len(page_rows)
 
 
 @router.get("/{document_id}")
