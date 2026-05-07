@@ -1,0 +1,42 @@
+import Link from "next/link";
+import { FolderOpen } from "lucide-react";
+
+import { EmptyState } from "@/components/EmptyState";
+import { FolderForm } from "@/components/FolderForm";
+import { apiGet } from "@/lib/api";
+
+type Folder = { id: string; name: string; created_at?: string };
+
+export default async function FoldersPage() {
+  let folders: Folder[] = [];
+
+  try {
+    folders = await apiGet<Folder[]>("/folders");
+  } catch {
+    folders = [{ id: "demo", name: "CMPT 300" }];
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-normal">Folders</h1>
+        <p className="mt-2 text-slate-600">Manage course folders and open their lecture materials.</p>
+      </div>
+      <FolderForm />
+      {folders.length ? (
+        <div className="grid gap-3 md:grid-cols-3">
+          {folders.map((folder) => (
+            <Link key={folder.id} href={`/folders/${folder.id}`} className="rounded-md border border-slate-200 bg-white p-4 hover:border-ink">
+              <FolderOpen className="mb-4 text-coral" size={22} />
+              <h2 className="font-semibold">{folder.name}</h2>
+              <p className="mt-1 text-sm text-slate-500">Open folder</p>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon={<FolderOpen size={20} />} title="No folders" description="Create your first course folder." />
+      )}
+    </div>
+  );
+}
+
