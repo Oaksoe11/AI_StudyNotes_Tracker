@@ -40,17 +40,22 @@ async def upload_document(
     )
     file_url = get_public_url(supabase, storage_path)
 
-    document_response = supabase.table("documents").insert(
-        {
-            "id": document_id,
-            "folder_id": folder_id,
-            "file_name": file.filename,
-            "storage_path": storage_path,
-            "file_url": file_url,
-            "selected_tone": tone.value,
-            "status": DocumentStatus.uploaded.value,
-        }
-    ).execute()
+    document_row = {
+        "id": document_id,
+        "folder_id": folder_id,
+        "title": file.filename.removesuffix(".pdf"),
+        "file_name": file.filename,
+        "storage_path": storage_path,
+        "file_url": file_url,
+        "selected_tone": tone.value,
+        "status": DocumentStatus.uploaded.value,
+    }
+
+    try:
+        document_response = supabase.table("documents").insert(document_row).execute()
+    except Exception:
+        document_row.pop("title", None)
+        document_response = supabase.table("documents").insert(document_row).execute()
 
     document = document_response.data[0]
     return {"document_id": document["id"], "document": document}
@@ -83,14 +88,29 @@ def extract_document(document_id: str) -> dict:
                 {
                     "document_id": document_id,
                     "page_number": page["page_number"],
-                    "text": page["text"],
+                    "extracted_text": page["text"],
                     "image_storage_path": image_storage_path,
                     "image_url": get_public_url(supabase, image_storage_path),
                 }
             )
 
         if page_rows:
-            supabase.table("document_pages").upsert(page_rows, on_conflict="document_id,page_number").execute()
+            try:
+                supabase.table("slides").upsert(page_rows, on_conflict="document_id,page_number").execute()
+            except Exception:
+                legacy_page_rows = [
+                    {
+                        **row,
+                        "text": row["extracted_text"],
+                    }
+                    for row in page_rows
+                ]
+                for row in legacy_page_rows:
+                    row.pop("extracted_text", None)
+                supabase.table("document_pages").upsert(
+                    legacy_page_rows,
+                    on_conflict="document_id,page_number",
+                ).execute()
 
         supabase.table("documents").update(
             {
@@ -115,11 +135,15 @@ def extract_document(document_id: str) -> dict:
 def get_document(document_id: str) -> dict:
     supabase = get_supabase()
     document_response = supabase.table("documents").select("*").eq("id", document_id).single().execute()
-    pages_response = supabase.table("document_pages").select("*").eq("document_id", document_id).execute()
+    try:
+        pages_response = supabase.table("slides").select("*").eq("document_id", document_id).order("page_number").execute()
+    except Exception:
+        pages_response = supabase.table("document_pages").select("*").eq("document_id", document_id).order("page_number").execute()
     notes_response = supabase.table("notes").select("*").eq("document_id", document_id).execute()
 
     return {
         "document": document_response.data,
+        "slides": pages_response.data,
         "pages": pages_response.data,
         "notes": notes_response.data,
     }

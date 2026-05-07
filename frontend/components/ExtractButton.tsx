@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { ScanText } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { extractDocument } from "@/lib/api";
 
 export function ExtractButton({ documentId }: { documentId: string }) {
+  const router = useRouter();
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   async function handleExtract() {
@@ -14,6 +16,7 @@ export function ExtractButton({ documentId }: { documentId: string }) {
     try {
       await extractDocument(documentId);
       setStatus("done");
+      router.refresh();
     } catch {
       setStatus("error");
     }

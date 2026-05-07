@@ -2,19 +2,22 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 
 import { ExtractButton } from "@/components/ExtractButton";
+import { StatusBadge } from "@/components/StatusBadge";
 import { ToneSelect } from "@/components/ToneSelect";
 import { apiGet } from "@/lib/api";
 
 type DocumentDetail = {
   document: {
     id: string;
+    title?: string;
     file_name: string;
     status: string;
     page_count: number;
     failure_reason?: string | null;
     selected_tone?: string;
   };
-  pages: { id: string; page_number: number; text: string; image_url?: string }[];
+  slides?: { id: string; page_number: number; extracted_text?: string; text?: string; image_url?: string }[];
+  pages: { id: string; page_number: number; extracted_text?: string; text?: string; image_url?: string }[];
   notes: { id: string; title: string }[];
 };
 
@@ -39,8 +42,8 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           <FileText size={20} />
         </span>
         <div>
-          <h1 className="text-3xl font-semibold tracking-normal">{data.document.file_name}</h1>
-          <p className="text-muted">Status: {data.document.status}</p>
+          <h1 className="text-3xl font-semibold tracking-normal">{data.document.title || data.document.file_name}</h1>
+          <div className="mt-1"><StatusBadge status={data.document.status} /></div>
         </div>
       </div>
 
@@ -68,7 +71,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                 <h3 className="font-medium">Slide {page.page_number}</h3>
                 {page.image_url ? <span className="text-xs text-muted">Image saved</span> : null}
               </div>
-              <p className="mt-2 line-clamp-3 text-sm text-muted">{page.text || "No extractable text"}</p>
+              <p className="mt-2 line-clamp-3 text-sm text-muted">{page.extracted_text || page.text || "No extractable text"}</p>
             </div>
           ))
         ) : (

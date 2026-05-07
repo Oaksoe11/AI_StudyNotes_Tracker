@@ -44,6 +44,20 @@ export async function generateNotes(documentId: string, tone: Tone) {
   return response.json();
 }
 
+export async function updateNote(noteId: string, payload: { title?: string; content?: string }) {
+  const response = await fetch(`${apiUrl}/notes/${noteId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw new Error("Note update failed");
+  }
+
+  return response.json();
+}
+
 export async function extractDocument(documentId: string) {
   const response = await fetch(`${apiUrl}/documents/${documentId}/extract`, {
     method: "POST"

@@ -1,6 +1,4 @@
-import ReactMarkdown from "react-markdown";
-import { BookOpen } from "lucide-react";
-
+import { NoteWorkspace } from "@/components/NoteWorkspace";
 import { apiGet } from "@/lib/api";
 
 type Note = {
@@ -8,6 +6,9 @@ type Note = {
   title: string;
   tone: string;
   content: string;
+  created_at?: string;
+  document_id?: string;
+  documents?: { folder_id?: string; title?: string; file_name?: string };
 };
 
 export default async function NoteDetailPage({ params }: { params: Promise<{ noteId: string }> }) {
@@ -25,24 +26,5 @@ export default async function NoteDetailPage({ params }: { params: Promise<{ not
     };
   }
 
-  return (
-    <article className="space-y-6">
-      <div className="flex items-center gap-3">
-        <span className="grid size-10 place-items-center rounded-md bg-mint">
-          <BookOpen size={20} />
-        </span>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-normal">{note.title}</h1>
-          <p className="text-muted">Tone: {note.tone}</p>
-        </div>
-      </div>
-
-      <div className="rounded-md border border-line bg-card shadow-sm p-6">
-        <div className="prose max-w-none prose-neutral dark:prose-invert">
-          <ReactMarkdown>{note.content}</ReactMarkdown>
-        </div>
-      </div>
-    </article>
-  );
+  return <NoteWorkspace note={note as Parameters<typeof NoteWorkspace>[0]["note"]} />;
 }
-

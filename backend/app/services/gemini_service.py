@@ -40,7 +40,7 @@ def generate_notes(slides: list[dict], tone: NoteTone = NoteTone.concise) -> str
     model = genai.GenerativeModel(settings.gemini_model)
 
     slide_text = "\n\n".join(
-        f"Slide {slide['page_number']}:\n{slide.get('text') or '[No extractable text]'}"
+        f"Slide {slide['page_number']}:\n{slide.get('extracted_text') or slide.get('text') or '[No extractable text]'}"
         for slide in slides
     )
     prompt = f"{BASE_PROMPT}\n\nTone rules:\n{TONE_PROMPTS.get(tone, TONE_PROMPTS[NoteTone.concise])}\n\nLecture content:\n{slide_text}"
@@ -68,6 +68,6 @@ def generate_notes(slides: list[dict], tone: NoteTone = NoteTone.concise) -> str
 
 def _slides_with_images(slides: list[dict]) -> list[dict]:
     slides_with_bytes = [slide for slide in slides if slide.get("image_bytes")]
-    no_text_slides = [slide for slide in slides_with_bytes if not slide.get("text")]
-    remaining = [slide for slide in slides_with_bytes if slide.get("text")]
+    no_text_slides = [slide for slide in slides_with_bytes if not (slide.get("extracted_text") or slide.get("text"))]
+    remaining = [slide for slide in slides_with_bytes if slide.get("extracted_text") or slide.get("text")]
     return [*no_text_slides, *remaining][: settings.gemini_max_images]

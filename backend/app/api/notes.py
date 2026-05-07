@@ -34,13 +34,22 @@ def generate_document_notes(payload: GenerateNotesRequest) -> dict:
     ).eq("id", payload.document_id).execute()
 
     try:
-        pages_response = (
-            supabase.table("document_pages")
-            .select("*")
-            .eq("document_id", payload.document_id)
-            .order("page_number")
-            .execute()
-        )
+        try:
+            pages_response = (
+                supabase.table("slides")
+                .select("*")
+                .eq("document_id", payload.document_id)
+                .order("page_number")
+                .execute()
+            )
+        except Exception:
+            pages_response = (
+                supabase.table("document_pages")
+                .select("*")
+                .eq("document_id", payload.document_id)
+                .order("page_number")
+                .execute()
+            )
 
         if not pages_response.data:
             raise HTTPException(status_code=400, detail="Extract PDF content before generating notes.")
@@ -51,7 +60,7 @@ def generate_document_notes(payload: GenerateNotesRequest) -> dict:
             {
                 "folder_id": document["folder_id"],
                 "document_id": payload.document_id,
-                "title": payload.title or document["file_name"].removesuffix(".pdf"),
+                "title": payload.title or document.get("title") or document["file_name"].removesuffix(".pdf"),
                 "tone": tone.value,
                 "content": content,
             }
@@ -86,7 +95,10 @@ def generate_document_notes(payload: GenerateNotesRequest) -> dict:
 @router.get("/{note_id}")
 def get_note(note_id: str) -> dict:
     supabase = get_supabase()
-    response = supabase.table("notes").select("*").eq("id", note_id).single().execute()
+    try:
+        response = supabase.table("notes").select("*").eq("id", note_id).single().execute()
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="Note not found") from exc
 
     if not response.data:
         raise HTTPException(status_code=404, detail="Note not found")

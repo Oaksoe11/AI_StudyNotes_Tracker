@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WandSparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { generateNotes, Tone } from "@/lib/api";
 
@@ -13,6 +14,7 @@ const tones: { value: Tone; label: string }[] = [
 ];
 
 export function ToneSelect({ documentId }: { documentId: string }) {
+  const router = useRouter();
   const [tone, setTone] = useState<Tone>("concise");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
@@ -22,6 +24,7 @@ export function ToneSelect({ documentId }: { documentId: string }) {
     try {
       await generateNotes(documentId, tone);
       setStatus("done");
+      router.refresh();
     } catch {
       setStatus("error");
     }
@@ -57,4 +60,3 @@ export function ToneSelect({ documentId }: { documentId: string }) {
     </div>
   );
 }
-

@@ -1,14 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BookOpen, FileText, FolderOpen, Plus } from "lucide-react";
+import { BookOpen, FileText, FolderOpen, Plus, Upload, WandSparkles } from "lucide-react";
 
+import { ActionCard } from "@/components/ActionCard";
 import { EmptyState } from "@/components/EmptyState";
 import { FolderForm } from "@/components/FolderForm";
+import { StatusBadge } from "@/components/StatusBadge";
 import { apiGet } from "@/lib/api";
 
 type Folder = { id: string; name: string; created_at?: string };
-type Document = { id: string; file_name: string; status: string };
-type Note = { id: string; title: string; tone: string };
+type Document = { id: string; title?: string; file_name: string; status: string; created_at?: string };
+type Note = { id: string; title: string; tone: string; created_at?: string };
 
 async function getDashboardData() {
   try {
@@ -55,6 +57,12 @@ export default async function DashboardPage() {
         <SummaryCard icon={<BookOpen size={18} />} label="Notes" value={notes.length} />
       </section>
 
+      <section className="grid gap-4 md:grid-cols-3">
+        <ActionCard href="/folders" icon={<Plus size={18} />} title="Create folder" description="Start a course space for PDFs and notes." />
+        <ActionCard href={folders[0] ? `/folders/${folders[0].id}` : "/folders"} icon={<Upload size={18} />} title="Upload PDF" description="Add a lecture deck to your first folder." />
+        <ActionCard href={notes[0] ? `/notes/${notes[0].id}` : "/dashboard"} icon={<WandSparkles size={18} />} title="View notes" description="Jump into your most recent generated note." />
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-3">
         <Panel title="Folders">
           {folders.map((folder) => (
@@ -63,16 +71,16 @@ export default async function DashboardPage() {
             </Link>
           ))}
         </Panel>
-        <Panel title="Recent documents">
-          {documents.map((document) => (
+        <Panel title="Recent uploads">
+          {documents.slice(0, 5).map((document) => (
             <Link key={document.id} href={`/documents/${document.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
-              <span className="block font-medium">{document.file_name}</span>
-              <span className="text-sm text-muted">{document.status}</span>
+              <span className="block font-medium">{document.title || document.file_name}</span>
+              <span className="mt-2 block"><StatusBadge status={document.status} /></span>
             </Link>
           ))}
         </Panel>
         <Panel title="Recent notes">
-          {notes.map((note) => (
+          {notes.slice(0, 5).map((note) => (
             <Link key={note.id} href={`/notes/${note.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
               <span className="block font-medium">{note.title}</span>
               <span className="text-sm text-muted">{note.tone}</span>
@@ -82,7 +90,7 @@ export default async function DashboardPage() {
       </section>
 
       {!folders.length ? (
-        <EmptyState icon={<FolderOpen size={20} />} title="No folders yet" description="Create a course folder to start uploading lecture PDFs." />
+        <EmptyState icon={<FolderOpen size={20} />} title="No dashboard activity yet" description="Create a course folder, upload a PDF, and generated notes will appear here." />
       ) : null}
     </div>
   );

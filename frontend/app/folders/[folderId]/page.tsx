@@ -3,11 +3,12 @@ import { BookOpen, FileText, FolderOpen } from "lucide-react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { PdfUpload } from "@/components/PdfUpload";
+import { StatusBadge } from "@/components/StatusBadge";
 import { apiGet } from "@/lib/api";
 
 type FolderDetail = {
   folder: { id: string; name: string };
-  documents: { id: string; file_name: string; status: string }[];
+  documents: { id: string; title?: string; file_name: string; status: string }[];
   notes: { id: string; title: string; tone: string }[];
 };
 
@@ -27,31 +28,34 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <span className="grid size-10 place-items-center rounded-md bg-mint">
-          <FolderOpen size={20} />
-        </span>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-semibold tracking-normal">{data.folder.name}</h1>
-          <p className="text-muted">Upload PDFs and review generated notes.</p>
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-md bg-mint">
+              <FolderOpen size={20} />
+            </span>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-normal">{data.folder.name}</h1>
+              <p className="text-muted">Uploaded PDFs, generated notes, and processing progress.</p>
+            </div>
+          </div>
         </div>
+        <PdfUpload folderId={data.folder.id} />
       </div>
-
-      <PdfUpload folderId={data.folder.id} />
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
-          <h2 className="font-semibold">PDFs</h2>
+          <h2 className="font-semibold">Uploaded PDFs</h2>
           {data.documents.length ? (
             data.documents.map((document) => (
               <Link key={document.id} href={`/documents/${document.id}`} className="flex items-center gap-3 rounded-md border border-line p-3 hover:border-coral">
                 <FileText size={18} className="text-coral" />
-                <span className="flex-1">{document.file_name}</span>
-                <span className="text-sm text-muted">{document.status}</span>
+                <span className="flex-1">{document.title || document.file_name}</span>
+                <StatusBadge status={document.status} />
               </Link>
             ))
           ) : (
-            <EmptyState icon={<FileText size={20} />} title="No PDFs" description="Upload a lecture PDF for this folder." />
+            <EmptyState icon={<FileText size={20} />} title="Empty folder" description="Upload a lecture PDF to start extracting slides and generating notes." />
           )}
         </div>
         <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
@@ -72,4 +76,3 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
     </div>
   );
 }
-
