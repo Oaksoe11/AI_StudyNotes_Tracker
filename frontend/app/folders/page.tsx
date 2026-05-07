@@ -3,7 +3,7 @@ import { FolderOpen } from "lucide-react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { FolderForm } from "@/components/FolderForm";
-import { apiGet } from "@/lib/api";
+import { serverApiGet } from "@/lib/server-api";
 
 type Folder = { id: string; name: string; created_at?: string };
 
@@ -11,9 +11,9 @@ export default async function FoldersPage() {
   let folders: Folder[] = [];
 
   try {
-    folders = await apiGet<Folder[]>("/folders");
+    folders = await serverApiGet<Folder[]>("/folders");
   } catch {
-    folders = [{ id: "demo", name: "CMPT 300" }];
+    folders = [];
   }
 
   return (
@@ -39,4 +39,3 @@ export default async function FoldersPage() {
     </div>
   );
 }
-

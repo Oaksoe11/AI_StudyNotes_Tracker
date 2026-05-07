@@ -1,9 +1,29 @@
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  const { getSupabaseClient } = await import("@/lib/supabase");
+  const supabase = getSupabaseClient();
+
+  if (!supabase) {
+    return {};
+  }
+
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export type Tone = "concise" | "detailed" | "exam_prep" | "beginner";
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, { cache: "no-store" });
+  const response = await fetch(`${apiUrl}${path}`, {
+    cache: "no-store",
+    headers: await getAuthHeaders()
+  });
 
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status}`);
@@ -20,6 +40,7 @@ export async function uploadPdf(folderId: string, tone: Tone, file: File) {
 
   const response = await fetch(`${apiUrl}/documents/upload`, {
     method: "POST",
+    headers: await getAuthHeaders(),
     body: formData
   });
 
@@ -33,7 +54,7 @@ export async function uploadPdf(folderId: string, tone: Tone, file: File) {
 export async function generateNotes(documentId: string, tone: Tone) {
   const response = await fetch(`${apiUrl}/notes/generate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify({ document_id: documentId, tone })
   });
 
@@ -47,7 +68,7 @@ export async function generateNotes(documentId: string, tone: Tone) {
 export async function updateNote(noteId: string, payload: { title?: string; content?: string }) {
   const response = await fetch(`${apiUrl}/notes/${noteId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify(payload)
   });
 
@@ -60,7 +81,8 @@ export async function updateNote(noteId: string, payload: { title?: string; cont
 
 export async function extractDocument(documentId: string) {
   const response = await fetch(`${apiUrl}/documents/${documentId}/extract`, {
-    method: "POST"
+    method: "POST",
+    headers: await getAuthHeaders()
   });
 
   if (!response.ok) {

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.auth import get_current_user
 from app.core.config import settings
 from app.core.supabase import get_supabase
 from app.models.schemas import DocumentStatus, GenerateNotesRequest, NoteTone
@@ -9,16 +10,29 @@ router = APIRouter()
 
 
 @router.get("")
-def list_notes() -> list[dict]:
+def list_notes(current_user: dict = Depends(get_current_user)) -> list[dict]:
     supabase = get_supabase()
-    response = supabase.table("notes").select("*").order("created_at", desc=True).execute()
+    response = (
+        supabase.table("notes")
+        .select("*")
+        .eq("user_id", current_user["id"])
+        .order("created_at", desc=True)
+        .execute()
+    )
     return response.data
 
 
 @router.post("/generate")
-def generate_document_notes(payload: GenerateNotesRequest) -> dict:
+def generate_document_notes(payload: GenerateNotesRequest, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
-    document_response = supabase.table("documents").select("*").eq("id", payload.document_id).single().execute()
+    document_response = (
+        supabase.table("documents")
+        .select("*")
+        .eq("id", payload.document_id)
+        .eq("user_id", current_user["id"])
+        .single()
+        .execute()
+    )
     document = document_response.data
 
     if not document:
@@ -60,6 +74,7 @@ def generate_document_notes(payload: GenerateNotesRequest) -> dict:
             {
                 "folder_id": document["folder_id"],
                 "document_id": payload.document_id,
+                "user_id": current_user["id"],
                 "title": payload.title or document.get("title") or document["file_name"].removesuffix(".pdf"),
                 "tone": tone.value,
                 "content": content,
@@ -93,10 +108,17 @@ def generate_document_notes(payload: GenerateNotesRequest) -> dict:
 
 
 @router.get("/{note_id}")
-def get_note(note_id: str) -> dict:
+def get_note(note_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
     try:
-        response = supabase.table("notes").select("*").eq("id", note_id).single().execute()
+        response = (
+            supabase.table("notes")
+            .select("*")
+            .eq("id", note_id)
+            .eq("user_id", current_user["id"])
+            .single()
+            .execute()
+        )
     except Exception as exc:
         raise HTTPException(status_code=404, detail="Note not found") from exc
 
@@ -107,10 +129,16 @@ def get_note(note_id: str) -> dict:
 
 
 @router.patch("/{note_id}")
-def update_note(note_id: str, payload: dict) -> dict:
+def update_note(note_id: str, payload: dict, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
     allowed = {key: payload[key] for key in ("title", "content") if key in payload}
-    response = supabase.table("notes").update(allowed).eq("id", note_id).execute()
+    response = (
+        supabase.table("notes")
+        .update(allowed)
+        .eq("id", note_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
 
     if not response.data:
         raise HTTPException(status_code=404, detail="Note not found")

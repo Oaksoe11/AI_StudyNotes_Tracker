@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 import { ExtractButton } from "@/components/ExtractButton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ToneSelect } from "@/components/ToneSelect";
-import { apiGet } from "@/lib/api";
+import { serverApiGet } from "@/lib/server-api";
 
 type DocumentDetail = {
   document: {
@@ -26,12 +26,12 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
   let data: DocumentDetail;
 
   try {
-    data = await apiGet<DocumentDetail>(`/documents/${documentId}`);
+    data = await serverApiGet<DocumentDetail>(`/documents/${documentId}`);
   } catch {
     data = {
-      document: { id: documentId, file_name: "Lecture 01.pdf", status: "uploaded", page_count: 0 },
+      document: { id: documentId, file_name: "Document", status: "uploaded", page_count: 0 },
       pages: [],
-      notes: [{ id: "demo", title: "Lecture 01 Notes" }]
+      notes: []
     };
   }
 

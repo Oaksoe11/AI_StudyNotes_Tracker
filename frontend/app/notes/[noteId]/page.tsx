@@ -1,5 +1,5 @@
 import { NoteWorkspace } from "@/components/NoteWorkspace";
-import { apiGet } from "@/lib/api";
+import { serverApiGet } from "@/lib/server-api";
 
 type Note = {
   id: string;
@@ -16,13 +16,13 @@ export default async function NoteDetailPage({ params }: { params: Promise<{ not
   let note: Note;
 
   try {
-    note = await apiGet<Note>(`/notes/${noteId}`);
+    note = await serverApiGet<Note>(`/notes/${noteId}`);
   } catch {
     note = {
       id: noteId,
-      title: "Lecture 01 Notes",
+      title: "Note not found",
       tone: "concise",
-      content: "# Lecture 01 Notes\n\n## Key concepts\n\n- Upload a lecture PDF.\n- Extract text and slide images.\n- Generate notes with a selected tone.\n\n## Review checklist\n\n- Can you explain the main topic?\n- Can you identify the important definitions?"
+      content: "This note could not be loaded for the current signed-in user."
     };
   }
 

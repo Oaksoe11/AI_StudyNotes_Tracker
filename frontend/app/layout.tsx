@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { AppSidebar } from "@/components/AppSidebar";
+import { AppFrame } from "@/components/AppFrame";
+import { AuthGate } from "@/components/AuthGate";
 
 import "./globals.css";
 
@@ -22,12 +23,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         />
       </head>
       <body>
-        <div className="grid min-h-screen md:grid-cols-[280px_minmax(0,1fr)]">
-          <AppSidebar />
-          <main className="min-w-0 px-5 py-6 md:px-8 md:py-8">
-            <div className="mx-auto max-w-6xl">{children}</div>
-          </main>
-        </div>
+        <AuthGate>
+          <AppFrame>{children}</AppFrame>
+        </AuthGate>
       </body>
     </html>
   );

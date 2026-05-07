@@ -3,7 +3,7 @@ import { FileText } from "lucide-react";
 
 import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
-import { apiGet } from "@/lib/api";
+import { serverApiGet } from "@/lib/server-api";
 
 type Document = {
   id: string;
@@ -17,7 +17,7 @@ export default async function DocumentsPage() {
   let documents: Document[] = [];
 
   try {
-    documents = await apiGet<Document[]>("/documents");
+    documents = await serverApiGet<Document[]>("/documents");
   } catch {
     documents = [];
   }

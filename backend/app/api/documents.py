@@ -1,7 +1,8 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 
+from app.core.auth import get_current_user
 from app.core.config import settings
 from app.core.supabase import get_supabase
 from app.models.schemas import DocumentStatus, NoteTone
@@ -12,9 +13,15 @@ router = APIRouter()
 
 
 @router.get("")
-def list_documents() -> list[dict]:
+def list_documents(current_user: dict = Depends(get_current_user)) -> list[dict]:
     supabase = get_supabase()
-    response = supabase.table("documents").select("*").order("created_at", desc=True).execute()
+    response = (
+        supabase.table("documents")
+        .select("*")
+        .eq("user_id", current_user["id"])
+        .order("created_at", desc=True)
+        .execute()
+    )
     return response.data
 
 
@@ -24,6 +31,7 @@ async def upload_document(
     folder_id: str = Form(...),
     tone: NoteTone = Form(NoteTone.concise),
     file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
 ) -> dict:
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
@@ -32,6 +40,17 @@ async def upload_document(
     document_id = str(uuid4())
     storage_path = f"{folder_id}/{document_id}/{file.filename}"
     supabase = get_supabase()
+    folder_response = (
+        supabase.table("folders")
+        .select("id")
+        .eq("id", folder_id)
+        .eq("user_id", current_user["id"])
+        .single()
+        .execute()
+    )
+
+    if not folder_response.data:
+        raise HTTPException(status_code=404, detail="Folder not found")
 
     upload_bytes(
         supabase,
@@ -43,6 +62,7 @@ async def upload_document(
 
     document_row = {
         "id": document_id,
+        "user_id": current_user["id"],
         "folder_id": folder_id,
         "title": file.filename.removesuffix(".pdf"),
         "file_name": file.filename,
@@ -69,9 +89,9 @@ async def upload_document(
 
 
 @router.post("/{document_id}/extract")
-def extract_document(document_id: str) -> dict:
+def extract_document(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     try:
-        page_count = process_document_extraction(document_id, raise_errors=True)
+        page_count = process_document_extraction(document_id, current_user["id"], raise_errors=True)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
@@ -80,9 +100,12 @@ def extract_document(document_id: str) -> dict:
     return {"document_id": document_id, "page_count": page_count}
 
 
-def process_document_extraction(document_id: str, raise_errors: bool = False) -> int:
+def process_document_extraction(document_id: str, user_id: str | None = None, raise_errors: bool = False) -> int:
     supabase = get_supabase()
-    document_response = supabase.table("documents").select("*").eq("id", document_id).single().execute()
+    document_query = supabase.table("documents").select("*").eq("id", document_id)
+    if user_id:
+        document_query = document_query.eq("user_id", user_id)
+    document_response = document_query.single().execute()
     document = document_response.data
 
     if not document:
@@ -154,14 +177,29 @@ def process_document_extraction(document_id: str, raise_errors: bool = False) ->
 
 
 @router.get("/{document_id}")
-def get_document(document_id: str) -> dict:
+def get_document(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
-    document_response = supabase.table("documents").select("*").eq("id", document_id).single().execute()
+    document_response = (
+        supabase.table("documents")
+        .select("*")
+        .eq("id", document_id)
+        .eq("user_id", current_user["id"])
+        .single()
+        .execute()
+    )
+    if not document_response.data:
+        raise HTTPException(status_code=404, detail="Document not found")
     try:
         pages_response = supabase.table("slides").select("*").eq("document_id", document_id).order("page_number").execute()
     except Exception:
         pages_response = supabase.table("document_pages").select("*").eq("document_id", document_id).order("page_number").execute()
-    notes_response = supabase.table("notes").select("*").eq("document_id", document_id).execute()
+    notes_response = (
+        supabase.table("notes")
+        .select("*")
+        .eq("document_id", document_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
 
     return {
         "document": document_response.data,

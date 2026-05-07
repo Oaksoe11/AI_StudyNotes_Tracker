@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 
 import { EmptyState } from "@/components/EmptyState";
-import { apiGet } from "@/lib/api";
+import { serverApiGet } from "@/lib/server-api";
 
 type Note = {
   id: string;
@@ -15,7 +15,7 @@ export default async function NotesPage() {
   let notes: Note[] = [];
 
   try {
-    notes = await apiGet<Note[]>("/notes");
+    notes = await serverApiGet<Note[]>("/notes");
   } catch {
     notes = [];
   }

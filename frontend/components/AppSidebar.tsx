@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, FileText, FolderOpen, LayoutDashboard, MoonStar, Upload } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, FileText, FolderOpen, LayoutDashboard, LogOut, MoonStar, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { getSupabaseClient } from "@/lib/supabase";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -38,12 +39,24 @@ export function AppSidebar() {
   const [folderNotes, setFolderNotes] = useState<Record<string, Note[]>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
+  async function authHeaders(): Promise<Record<string, string>> {
+    const supabase = getSupabaseClient();
+    const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    return data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {};
+  }
+
+  async function logout() {
+    const supabase = getSupabaseClient();
+    await supabase?.auth.signOut();
+    document.cookie = "sb-access-token=; path=/; max-age=0; SameSite=Lax";
+  }
+
   useEffect(() => {
     async function loadFolders() {
       setStatus("loading");
 
       try {
-        const response = await fetch(`${apiUrl}/folders`);
+        const response = await fetch(`${apiUrl}/folders`, { headers: await authHeaders() });
         if (!response.ok) {
           throw new Error("Unable to load folders");
         }
@@ -66,7 +79,7 @@ export function AppSidebar() {
     }
 
     try {
-      const response = await fetch(`${apiUrl}/folders/${folderId}`);
+      const response = await fetch(`${apiUrl}/folders/${folderId}`, { headers: await authHeaders() });
       if (!response.ok) {
         throw new Error("Unable to load folder notes");
       }
@@ -113,6 +126,14 @@ export function AppSidebar() {
             </span>
             <ThemeToggle compact />
           </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="flex min-h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-muted transition hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
+          >
+            <LogOut size={16} />
+            Log out
+          </button>
         </section>
 
         <section className="mt-6 space-y-1">

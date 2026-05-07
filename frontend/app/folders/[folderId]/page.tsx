@@ -4,7 +4,7 @@ import { BookOpen, FileText, FolderOpen } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { PdfUpload } from "@/components/PdfUpload";
 import { StatusBadge } from "@/components/StatusBadge";
-import { apiGet } from "@/lib/api";
+import { serverApiGet } from "@/lib/server-api";
 
 type FolderDetail = {
   folder: { id: string; name: string };
@@ -17,12 +17,12 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
   let data: FolderDetail;
 
   try {
-    data = await apiGet<FolderDetail>(`/folders/${folderId}`);
+    data = await serverApiGet<FolderDetail>(`/folders/${folderId}`);
   } catch {
     data = {
-      folder: { id: folderId, name: folderId === "demo" ? "CMPT 300" : "Folder" },
-      documents: [{ id: "demo", file_name: "Lecture 01.pdf", status: "uploaded" }],
-      notes: [{ id: "demo", title: "Lecture 01 Notes", tone: "concise" }]
+      folder: { id: folderId, name: "Folder" },
+      documents: [],
+      notes: []
     };
   }
 

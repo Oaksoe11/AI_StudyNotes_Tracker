@@ -6,7 +6,7 @@ import { ActionCard } from "@/components/ActionCard";
 import { EmptyState } from "@/components/EmptyState";
 import { FolderForm } from "@/components/FolderForm";
 import { StatusBadge } from "@/components/StatusBadge";
-import { apiGet } from "@/lib/api";
+import { serverApiGet } from "@/lib/server-api";
 
 type Folder = { id: string; name: string; created_at?: string };
 type Document = { id: string; title?: string; file_name: string; status: string; created_at?: string };
@@ -15,17 +15,17 @@ type Note = { id: string; title: string; tone: string; created_at?: string };
 async function getDashboardData() {
   try {
     const [folders, documents, notes] = await Promise.all([
-      apiGet<Folder[]>("/folders"),
-      apiGet<Document[]>("/documents"),
-      apiGet<Note[]>("/notes")
+      serverApiGet<Folder[]>("/folders"),
+      serverApiGet<Document[]>("/documents"),
+      serverApiGet<Note[]>("/notes")
     ]);
 
     return { folders, documents, notes };
   } catch {
     return {
-      folders: [{ id: "demo", name: "CMPT 300" }],
-      documents: [{ id: "demo", file_name: "Lecture 01.pdf", status: "uploaded" }],
-      notes: [{ id: "demo", title: "Lecture 01 Notes", tone: "concise" }]
+      folders: [],
+      documents: [],
+      notes: []
     };
   }
 }
