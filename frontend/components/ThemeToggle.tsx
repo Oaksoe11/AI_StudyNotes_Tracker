@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -27,9 +27,11 @@ export function ThemeToggle() {
       type="button"
       onClick={toggleTheme}
       title={isDark ? "Use light mode" : "Use dark mode"}
-      className="grid size-10 place-items-center rounded-md border border-line bg-card text-ink shadow-sm transition hover:border-coral hover:text-coral"
+      className={`grid place-items-center rounded-md border border-line bg-card text-ink shadow-sm transition hover:border-coral hover:text-coral ${
+        compact ? "size-8" : "size-10"
+      }`}
     >
-      {isDark ? <Sun size={17} /> : <Moon size={17} />}
+      {isDark ? <Sun size={compact ? 15 : 17} /> : <Moon size={compact ? 15 : 17} />}
     </button>
   );
 }
