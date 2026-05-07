@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 
 export function FolderForm() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -24,6 +26,7 @@ export function FolderForm() {
 
       setName("");
       setStatus("saved");
+      router.refresh();
     } catch {
       setStatus("error");
     }
@@ -51,4 +54,3 @@ export function FolderForm() {
     </form>
   );
 }
-
