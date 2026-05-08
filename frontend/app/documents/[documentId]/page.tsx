@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft, FileText } from "lucide-react";
 
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { DeleteButton } from "@/components/DeleteButton";
+import { DocumentProgress } from "@/components/DocumentProgress";
 import { ExtractButton } from "@/components/ExtractButton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ToneSelect } from "@/components/ToneSelect";
@@ -38,9 +40,14 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
   const pageCount = data.pages.length || data.document.page_count || 0;
   const hasExtractedSlides = pageCount > 0;
   const hasNotes = data.notes.length > 0;
+  const isProcessing =
+    data.document.status === "extracting" ||
+    data.document.status === "generating" ||
+    (data.document.status === "uploaded" && !hasExtractedSlides);
 
   return (
     <div className="space-y-6">
+      <AutoRefresh enabled={isProcessing} />
       <Link href="/documents" className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-coral">
         <ArrowLeft size={16} />
         Back to documents
@@ -69,6 +76,8 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           {data.document.failure_reason}
         </div>
       ) : null}
+
+      <DocumentProgress status={data.document.status} pageCount={pageCount} noteCount={data.notes.length} />
 
       <section className="space-y-4 rounded-md border border-line bg-card p-4 shadow-sm">
         <div>

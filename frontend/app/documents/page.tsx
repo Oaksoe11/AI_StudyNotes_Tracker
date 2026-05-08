@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { FileText } from "lucide-react";
 
+import { AutoRefresh } from "@/components/AutoRefresh";
+import { DocumentsList } from "@/components/DocumentsList";
 import { EmptyState } from "@/components/EmptyState";
-import { StatusBadge } from "@/components/StatusBadge";
 import { serverApiGet } from "@/lib/server-api";
 
 type Document = {
@@ -21,33 +21,18 @@ export default async function DocumentsPage() {
   } catch {
     documents = [];
   }
+  const hasProcessingDocuments = documents.some((document) => document.status === "extracting" || document.status === "generating");
 
   return (
     <div className="space-y-6">
+      <AutoRefresh enabled={hasProcessingDocuments} />
       <div>
         <h1 className="text-3xl font-semibold tracking-normal">Documents</h1>
         <p className="mt-2 text-muted">Uploaded PDFs and their processing states.</p>
       </div>
 
       {documents.length ? (
-        <div className="grid gap-3">
-          {documents.map((document) => (
-            <Link
-              key={document.id}
-              href={`/documents/${document.id}`}
-              className="flex items-center justify-between gap-4 rounded-md border border-line bg-card p-4 shadow-sm transition hover:border-coral"
-            >
-              <span className="flex min-w-0 items-center gap-3">
-                <FileText size={18} className="text-coral" />
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{document.title || document.file_name}</span>
-                  <span className="text-sm text-muted">{document.file_name}</span>
-                </span>
-              </span>
-              <StatusBadge status={document.status} />
-            </Link>
-          ))}
-        </div>
+        <DocumentsList documents={documents} />
       ) : (
         <EmptyState icon={<FileText size={20} />} title="No documents" description="Upload a PDF inside a folder to see it here." />
       )}
