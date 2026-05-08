@@ -56,18 +56,18 @@ export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActio
 
   if (isEditing) {
     return (
-      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="grid min-w-0 gap-2 sm:flex sm:flex-row sm:items-center">
         <input
           value={nextTitle}
           onChange={(event) => setNextTitle(event.target.value)}
           className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm outline-none focus:border-coral"
         />
-        <div className="flex gap-2">
+        <div className="grid grid-cols-[1fr_auto] gap-2 sm:flex">
           <button
             type="button"
             onClick={handleSave}
             disabled={status === "saving"}
-            className="inline-flex min-h-10 items-center gap-2 rounded-md bg-coral px-3 text-sm font-medium text-white disabled:opacity-60"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-coral px-3 text-sm font-medium text-white disabled:opacity-60"
           >
             <Save size={15} />
             Save
@@ -90,11 +90,11 @@ export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActio
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid gap-2 sm:flex sm:flex-wrap">
       <button
         type="button"
         onClick={() => setIsEditing(true)}
-        className="inline-flex min-h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral"
       >
         <Pencil size={15} />
         Rename
@@ -103,7 +103,7 @@ export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActio
         type="button"
         onClick={handleDelete}
         disabled={status === "deleting"}
-        className="inline-flex min-h-10 items-center gap-2 rounded-md border border-red-400/40 px-3 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-60 dark:text-red-300"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-red-400/40 px-3 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-60 dark:text-red-300"
       >
         <Trash2 size={15} />
         {status === "deleting" ? "Deleting" : "Delete"}

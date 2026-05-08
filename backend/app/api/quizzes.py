@@ -137,6 +137,10 @@ def update_quiz(quiz_id: str, payload: dict, current_user: dict = Depends(get_cu
     allowed = {key: payload[key] for key in ("title", "is_saved") if key in payload}
     if not allowed:
         raise HTTPException(status_code=400, detail="No quiz fields to update.")
+    if "title" in allowed:
+        allowed["title"] = str(allowed["title"]).strip()
+        if not allowed["title"]:
+            raise HTTPException(status_code=400, detail="Quiz title is required.")
 
     supabase = get_supabase()
     response = (

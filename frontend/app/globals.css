@@ -180,3 +180,18 @@ input::file-selector-button {
   border: 0;
   padding: 0;
 }
+
+@media (max-width: 640px) {
+  .note-markdown {
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+
+  .note-markdown h1 {
+    font-size: 1.45rem;
+  }
+
+  .note-markdown h2 {
+    font-size: 1.15rem;
+  }
+}

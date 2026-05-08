@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class NoteTone(str, Enum):
@@ -20,11 +20,27 @@ class DocumentStatus(str, Enum):
 
 
 class FolderCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=120)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Folder name is required.")
+        return cleaned
 
 
 class FolderUpdate(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=120)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Folder name is required.")
+        return cleaned
 
 
 class GenerateNotesRequest(BaseModel):

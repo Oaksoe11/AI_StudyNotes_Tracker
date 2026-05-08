@@ -33,7 +33,7 @@ export function GenerateQuizButton({ documentId, noteId, label = "Generate quiz"
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-line bg-card p-3 shadow-sm">
+    <div className="flex w-full flex-col gap-3 rounded-md border border-line bg-card p-3 shadow-sm sm:w-auto">
       <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
         <label className="text-sm font-medium">
           Quiz level

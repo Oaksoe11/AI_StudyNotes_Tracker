@@ -111,21 +111,21 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   return (
     <article className="space-y-6">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-md bg-mint">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-md bg-mint">
             <FileText size={20} />
           </span>
-          <div>
-            <h1 className="text-3xl font-semibold tracking-normal">{title}</h1>
-            <p className="text-muted">
+          <div className="min-w-0">
+            <h1 className="break-words text-2xl font-semibold tracking-normal sm:text-3xl">{title}</h1>
+            <p className="mt-1 break-words text-sm text-muted sm:text-base">
               Tone: {tone} · Created {createdDate}
               {sourceFile ? ` · Source: ${sourceFile}` : ""}
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid gap-2 sm:flex sm:flex-wrap lg:justify-end">
           {folderId ? (
-            <Link href={`/folders/${folderId}`} className="inline-flex min-h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral">
+            <Link href={`/folders/${folderId}`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral">
               <ArrowLeft size={15} />
               Back to folder
             </Link>
@@ -133,7 +133,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="inline-flex min-h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral"
           >
             <SquarePen size={15} />
             Edit
@@ -141,7 +141,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
           <button
             type="button"
             onClick={handleExport}
-            className="inline-flex min-h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral hover:text-coral"
           >
             <Download size={15} />
             Export
@@ -156,11 +156,11 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
             <h2 className="font-semibold">Keep this generated note?</h2>
             <p className="mt-1 text-sm text-muted">Save it in your notes, or discard it if this version is not useful.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-2 sm:flex sm:flex-wrap">
             <button
               type="button"
               onClick={handleKeep}
-              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-coral px-3 text-sm font-medium text-white shadow-sm transition hover:bg-berry"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-coral px-3 text-sm font-medium text-white shadow-sm transition hover:bg-berry"
             >
               <Check size={15} />
               Keep note
@@ -169,7 +169,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
               type="button"
               onClick={handleDeleteNote}
               disabled={status === "deleting"}
-              className="inline-flex min-h-10 items-center gap-2 rounded-md border border-red-400/40 px-3 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-60 dark:text-red-300"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-red-400/40 px-3 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-60 dark:text-red-300"
             >
               <Trash2 size={15} />
               {status === "deleting" ? "Deleting" : "Delete note"}
@@ -222,7 +222,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
               onChange={(event) => setContent(event.target.value)}
               className="min-h-[520px] w-full rounded-md border border-line px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-coral"
             />
-            <div className="flex justify-end gap-2">
+            <div className="grid gap-2 sm:flex sm:justify-end">
               <button
                 type="button"
                 onClick={() => {
@@ -230,7 +230,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
                   setContent(note.content);
                   setIsEditing(false);
                 }}
-                className="inline-flex min-h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-medium hover:border-coral"
               >
                 <X size={15} />
                 Cancel
@@ -239,7 +239,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
                 type="button"
                 onClick={handleSave}
                 disabled={status === "saving"}
-                className="inline-flex min-h-10 items-center gap-2 rounded-md bg-coral px-3 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-coral px-3 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
               >
                 <Save size={15} />
                 {status === "saving" ? "Saving" : "Save changes"}
@@ -247,7 +247,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
             </div>
           </div>
         ) : (
-          <div className="max-h-[68vh] overflow-y-auto px-5 py-6 md:px-8">
+          <div className="max-h-[70vh] overflow-y-auto px-4 py-5 sm:px-5 md:px-8 md:py-6">
             <div className="note-markdown mx-auto max-w-3xl">
             <ReactMarkdown>{content}</ReactMarkdown>
             </div>

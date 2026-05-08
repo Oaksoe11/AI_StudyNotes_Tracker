@@ -1,3 +1,4 @@
+from pathlib import PurePath
 from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
@@ -37,8 +38,12 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
 
     pdf_bytes = await file.read()
+    if not pdf_bytes.startswith(b"%PDF"):
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF.")
+
     document_id = str(uuid4())
-    storage_path = f"{folder_id}/{document_id}/{file.filename}"
+    filename = _safe_pdf_filename(file.filename)
+    storage_path = f"{folder_id}/{document_id}/{filename}"
     supabase = get_supabase()
     folder_response = (
         supabase.table("folders")
@@ -64,8 +69,8 @@ async def upload_document(
         "id": document_id,
         "user_id": current_user["id"],
         "folder_id": folder_id,
-        "title": file.filename.removesuffix(".pdf"),
-        "file_name": file.filename,
+        "title": filename.removesuffix(".pdf"),
+        "file_name": filename,
         "storage_path": storage_path,
         "file_url": file_url,
         "selected_tone": tone.value,
@@ -79,7 +84,7 @@ async def upload_document(
         document_response = supabase.table("documents").insert(document_row).execute()
 
     document = document_response.data[0]
-    background_tasks.add_task(process_document_extraction, document["id"])
+    background_tasks.add_task(process_document_extraction, document["id"], current_user["id"])
 
     return {
         "document_id": document["id"],
@@ -103,6 +108,28 @@ def extract_document(document_id: str, current_user: dict = Depends(get_current_
 @router.delete("/{document_id}")
 def delete_document(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
+    try:
+        document_response = (
+            supabase.table("documents")
+            .select("id,storage_path")
+            .eq("id", document_id)
+            .eq("user_id", current_user["id"])
+            .single()
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="Document not found") from exc
+
+    if not document_response.data:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    storage_paths = [document_response.data.get("storage_path")]
+    try:
+        slides_response = supabase.table("slides").select("image_storage_path").eq("document_id", document_id).execute()
+    except Exception:
+        slides_response = supabase.table("document_pages").select("image_storage_path").eq("document_id", document_id).execute()
+    storage_paths.extend(slide.get("image_storage_path") for slide in slides_response.data or [])
+
     response = (
         supabase.table("documents")
         .delete()
@@ -113,6 +140,11 @@ def delete_document(document_id: str, current_user: dict = Depends(get_current_u
 
     if not response.data:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    try:
+        remove_storage_objects(supabase, [path for path in storage_paths if path])
+    except Exception:
+        pass
 
     return {"deleted": True, "document_id": document_id}
 
@@ -232,3 +264,12 @@ def get_document(document_id: str, current_user: dict = Depends(get_current_user
         "pages": pages_response.data,
         "notes": notes_response.data,
     }
+
+
+def _safe_pdf_filename(filename: str | None) -> str:
+    name = PurePath(filename or "lecture.pdf").name.strip().replace("\x00", "")
+    if not name:
+        name = "lecture.pdf"
+    if not name.lower().endswith(".pdf"):
+        name = f"{name}.pdf"
+    return name

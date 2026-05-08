@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, FileText, FolderOpen, LayoutDashboard, ListChecks, LogOut, MoonStar, Upload } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, FileText, FolderOpen, LayoutDashboard, ListChecks, LogOut, Menu, MoonStar, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -39,6 +39,7 @@ export function AppSidebar() {
   const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
   const [folderNotes, setFolderNotes] = useState<Record<string, Note[]>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   async function authHeaders(): Promise<Record<string, string>> {
     const supabase = getSupabaseClient();
@@ -85,6 +86,10 @@ export function AppSidebar() {
     return () => window.removeEventListener("study-notes:data-changed", handleDataChanged);
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   async function toggleFolder(folderId: string) {
     const nextFolderId = expandedFolderId === folderId ? null : folderId;
     setExpandedFolderId(nextFolderId);
@@ -106,14 +111,53 @@ export function AppSidebar() {
   }
 
   return (
-    <aside className="flex h-full min-h-screen flex-col border-r border-line bg-card/90 shadow-sm backdrop-blur">
-      <div className="border-b border-line p-4">
-        <Link href="/dashboard" className="flex items-center gap-3 font-semibold">
+    <>
+      <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-line bg-card/95 px-4 shadow-sm backdrop-blur md:hidden">
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-3 font-semibold">
+          <span className="grid size-10 shrink-0 place-items-center rounded-md bg-coral text-white shadow-sm">
+            <BookOpen size={19} />
+          </span>
+          <span className="truncate">Study Notes</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="grid size-11 place-items-center rounded-md border border-line text-muted hover:border-coral hover:text-coral"
+          aria-label="Open navigation"
+        >
+          <Menu size={20} />
+        </button>
+      </header>
+
+      {isMobileMenuOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/35 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-label="Close navigation overlay"
+        />
+      ) : null}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-full min-h-screen w-[min(20rem,calc(100vw-2rem))] flex-col border-r border-line bg-card/95 shadow-xl backdrop-blur transition-transform duration-200 md:sticky md:top-0 md:z-auto md:w-auto md:translate-x-0 md:bg-card/90 md:shadow-sm ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+      <div className="flex items-center justify-between gap-3 border-b border-line p-4">
+        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="flex min-w-0 items-center gap-3 font-semibold">
           <span className="grid size-10 place-items-center rounded-md bg-coral text-white shadow-sm">
             <BookOpen size={19} />
           </span>
-          <span>Study Notes</span>
+          <span className="truncate">Study Notes</span>
         </Link>
+        <button
+          type="button"
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="grid size-10 shrink-0 place-items-center rounded-md border border-line text-muted hover:border-coral hover:text-coral md:hidden"
+          aria-label="Close navigation"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
@@ -125,6 +169,7 @@ export function AppSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${
                   isActive ? "bg-coral text-white shadow-sm" : "text-muted hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
                 }`}
@@ -175,6 +220,7 @@ export function AppSidebar() {
                         <Link
                           key={note.id}
                           href={`/notes/${note.id}`}
+                          onClick={() => setIsMobileMenuOpen(false)}
                           className={`flex min-h-9 items-center gap-2 rounded-md px-2 text-sm transition ${
                             pathname === `/notes/${note.id}`
                               ? "bg-coral/15 text-coral"
@@ -200,5 +246,6 @@ export function AppSidebar() {
         </section>
       </div>
     </aside>
+    </>
   );
 }

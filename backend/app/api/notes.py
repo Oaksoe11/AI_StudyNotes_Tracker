@@ -132,6 +132,13 @@ def get_note(note_id: str, current_user: dict = Depends(get_current_user)) -> di
 def update_note(note_id: str, payload: dict, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
     allowed = {key: payload[key] for key in ("title", "content") if key in payload}
+    if not allowed:
+        raise HTTPException(status_code=400, detail="No note fields to update.")
+    if "title" in allowed:
+        allowed["title"] = str(allowed["title"]).strip()
+        if not allowed["title"]:
+            raise HTTPException(status_code=400, detail="Note title is required.")
+
     response = (
         supabase.table("notes")
         .update(allowed)

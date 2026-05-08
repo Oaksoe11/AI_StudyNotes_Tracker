@@ -13,9 +13,9 @@ export function AppFrame({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="grid min-h-screen md:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="min-h-screen md:grid md:grid-cols-[280px_minmax(0,1fr)]">
       <AppSidebar />
-      <main className="min-w-0 px-5 py-6 md:px-8 md:py-8">
+      <main className="min-w-0 px-4 py-5 sm:px-5 md:px-8 md:py-8">
         <div className="mx-auto max-w-6xl">{children}</div>
       </main>
     </div>

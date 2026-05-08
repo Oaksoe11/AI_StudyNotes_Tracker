@@ -55,10 +55,10 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
         Back to notes
       </Link>
 
-      <header className="flex flex-col justify-between gap-4 rounded-md border border-line bg-card p-5 shadow-sm lg:flex-row lg:items-start">
-        <div>
+      <header className="flex flex-col justify-between gap-4 rounded-md border border-line bg-card p-4 shadow-sm sm:p-5 lg:flex-row lg:items-start">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-coral">Practice quiz</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-normal">{quiz.title}</h1>
+          <h1 className="mt-1 break-words text-2xl font-semibold tracking-normal sm:text-3xl">{quiz.title}</h1>
           <p className="mt-2 text-muted">15 questions across easy, medium, and hard levels</p>
           <p className="mt-2 break-all font-mono text-xs text-muted">{path}</p>
         </div>
@@ -87,7 +87,7 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
                 </span>
                 {question.page_reference ? <span className="text-xs text-muted">{question.page_reference}</span> : null}
               </div>
-              <h2 className="mt-3 font-semibold">{question.position}. {question.question}</h2>
+              <h2 className="mt-3 break-words font-semibold">{question.position}. {question.question}</h2>
               <div className="mt-3 grid gap-2">
                 {question.choices.map((choice) => {
                   const isSelected = selected === choice;
@@ -116,8 +116,8 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
               </div>
               {submitted ? (
                 <div className="mt-3 flex gap-2 rounded-md border border-line bg-paper/60 p-3 text-sm">
-                  {isCorrect ? <CheckCircle2 size={17} className="mt-0.5 text-emerald-600" /> : <CircleAlert size={17} className="mt-0.5 text-red-600" />}
-                  <p>
+                  {isCorrect ? <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-600" /> : <CircleAlert size={17} className="mt-0.5 shrink-0 text-red-600" />}
+                  <p className="min-w-0 break-words">
                     <span className="font-medium">{isCorrect ? "Correct." : `Answer: ${question.correct_answer}.`}</span>{" "}
                     {question.explanation}
                   </p>
