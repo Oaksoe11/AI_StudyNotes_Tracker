@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileText } from "lucide-react";
 
+import { DeleteButton } from "@/components/DeleteButton";
 import { ExtractButton } from "@/components/ExtractButton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ToneSelect } from "@/components/ToneSelect";
@@ -37,14 +38,22 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <span className="grid size-10 place-items-center rounded-md bg-mint">
-          <FileText size={20} />
-        </span>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-normal">{data.document.title || data.document.file_name}</h1>
-          <div className="mt-1"><StatusBadge status={data.document.status} /></div>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div className="flex items-center gap-3">
+          <span className="grid size-10 place-items-center rounded-md bg-mint">
+            <FileText size={20} />
+          </span>
+          <div>
+            <h1 className="text-3xl font-semibold tracking-normal">{data.document.title || data.document.file_name}</h1>
+            <div className="mt-1"><StatusBadge status={data.document.status} /></div>
+          </div>
         </div>
+        <DeleteButton
+          endpoint={`/documents/${data.document.id}`}
+          label="Delete document"
+          confirmMessage={`Delete document "${data.document.title || data.document.file_name}"?`}
+          redirectTo="/documents"
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

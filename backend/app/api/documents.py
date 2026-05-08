@@ -100,6 +100,23 @@ def extract_document(document_id: str, current_user: dict = Depends(get_current_
     return {"document_id": document_id, "page_count": page_count}
 
 
+@router.delete("/{document_id}")
+def delete_document(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
+    supabase = get_supabase()
+    response = (
+        supabase.table("documents")
+        .delete()
+        .eq("id", document_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return {"deleted": True, "document_id": document_id}
+
+
 def process_document_extraction(document_id: str, user_id: str | None = None, raise_errors: bool = False) -> int:
     supabase = get_supabase()
     document_query = supabase.table("documents").select("*").eq("id", document_id)

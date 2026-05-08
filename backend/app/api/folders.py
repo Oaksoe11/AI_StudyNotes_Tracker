@@ -44,6 +44,23 @@ def update_folder(folder_id: str, payload: FolderUpdate, current_user: dict = De
     return response.data[0]
 
 
+@router.delete("/{folder_id}")
+def delete_folder(folder_id: str, current_user: dict = Depends(get_current_user)) -> dict:
+    supabase = get_supabase()
+    response = (
+        supabase.table("folders")
+        .delete()
+        .eq("id", folder_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Folder not found")
+
+    return {"deleted": True, "folder_id": folder_id}
+
+
 @router.get("/{folder_id}")
 def get_folder(folder_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()

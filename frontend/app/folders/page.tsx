@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FolderOpen } from "lucide-react";
 
+import { DeleteButton } from "@/components/DeleteButton";
 import { EmptyState } from "@/components/EmptyState";
 import { FolderForm } from "@/components/FolderForm";
 import { serverApiGet } from "@/lib/server-api";
@@ -26,11 +27,20 @@ export default async function FoldersPage() {
       {folders.length ? (
         <div className="grid gap-3 md:grid-cols-3">
           {folders.map((folder) => (
-            <Link key={folder.id} href={`/folders/${folder.id}`} className="rounded-md border border-line bg-card shadow-sm p-4 hover:border-coral">
-              <FolderOpen className="mb-4 text-coral" size={22} />
-              <h2 className="font-semibold">{folder.name}</h2>
-              <p className="mt-1 text-sm text-muted">Open folder</p>
-            </Link>
+            <div key={folder.id} className="rounded-md border border-line bg-card p-4 shadow-sm transition hover:border-coral">
+              <Link href={`/folders/${folder.id}`} className="block">
+                <FolderOpen className="mb-4 text-coral" size={22} />
+                <h2 className="font-semibold">{folder.name}</h2>
+                <p className="mt-1 text-sm text-muted">Open folder</p>
+              </Link>
+              <div className="mt-4">
+                <DeleteButton
+                  endpoint={`/folders/${folder.id}`}
+                  label="Delete"
+                  confirmMessage={`Delete folder "${folder.name}" and its documents/notes?`}
+                />
+              </div>
+            </div>
           ))}
         </div>
       ) : (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen, FileText, FolderOpen } from "lucide-react";
 
+import { DeleteButton } from "@/components/DeleteButton";
 import { EmptyState } from "@/components/EmptyState";
 import { PdfUpload } from "@/components/PdfUpload";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -40,7 +41,15 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
             </div>
           </div>
         </div>
-        <PdfUpload folderId={data.folder.id} />
+        <div className="flex flex-wrap gap-2">
+          <PdfUpload folderId={data.folder.id} />
+          <DeleteButton
+            endpoint={`/folders/${data.folder.id}`}
+            label="Delete folder"
+            confirmMessage={`Delete folder "${data.folder.name}" and its documents/notes?`}
+            redirectTo="/folders"
+          />
+        </div>
       </div>
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -48,11 +57,18 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
           <h2 className="font-semibold">Uploaded PDFs</h2>
           {data.documents.length ? (
             data.documents.map((document) => (
-              <Link key={document.id} href={`/documents/${document.id}`} className="flex items-center gap-3 rounded-md border border-line p-3 hover:border-coral">
-                <FileText size={18} className="text-coral" />
-                <span className="flex-1">{document.title || document.file_name}</span>
+              <div key={document.id} className="flex items-center gap-3 rounded-md border border-line p-3">
+                <Link href={`/documents/${document.id}`} className="flex min-w-0 flex-1 items-center gap-3 hover:text-coral">
+                  <FileText size={18} className="text-coral" />
+                  <span className="min-w-0 flex-1 truncate">{document.title || document.file_name}</span>
+                </Link>
                 <StatusBadge status={document.status} />
-              </Link>
+                <DeleteButton
+                  endpoint={`/documents/${document.id}`}
+                  label="Delete"
+                  confirmMessage={`Delete document "${document.title || document.file_name}"?`}
+                />
+              </div>
             ))
           ) : (
             <EmptyState icon={<FileText size={20} />} title="Empty folder" description="Upload a lecture PDF to start extracting slides and generating notes." />
