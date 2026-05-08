@@ -53,23 +53,36 @@ export function AppSidebar() {
     window.location.assign("/login");
   }
 
-  useEffect(() => {
-    async function loadFolders() {
-      setStatus("loading");
+  async function loadFolders() {
+    setStatus("loading");
 
-      try {
-        const response = await fetch(`${apiUrl}/folders`, { headers: await authHeaders() });
-        if (!response.ok) {
-          throw new Error("Unable to load folders");
-        }
-        setFolders(await response.json());
-        setStatus("idle");
-      } catch {
-        setStatus("error");
+    try {
+      const response = await fetch(`${apiUrl}/folders`, { headers: await authHeaders() });
+      if (!response.ok) {
+        throw new Error("Unable to load folders");
       }
+      const nextFolders = await response.json();
+      setFolders(nextFolders);
+      setExpandedFolderId((current) => nextFolders.some((folder: Folder) => folder.id === current) ? current : null);
+      setFolderNotes((current) => {
+        const folderIds = new Set(nextFolders.map((folder: Folder) => folder.id));
+        return Object.fromEntries(Object.entries(current).filter(([folderId]) => folderIds.has(folderId)));
+      });
+      setStatus("idle");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  useEffect(() => {
+    loadFolders();
+
+    function handleDataChanged() {
+      loadFolders();
     }
 
-    loadFolders();
+    window.addEventListener("study-notes:data-changed", handleDataChanged);
+    return () => window.removeEventListener("study-notes:data-changed", handleDataChanged);
   }, []);
 
   async function toggleFolder(folderId: string) {

@@ -26,6 +26,7 @@ export function DeleteButton({ endpoint, label, confirmMessage, redirectTo }: De
 
     try {
       await apiDelete(endpoint);
+      window.dispatchEvent(new CustomEvent("study-notes:data-changed", { detail: { endpoint } }));
       if (redirectTo) {
         router.push(redirectTo);
       }
