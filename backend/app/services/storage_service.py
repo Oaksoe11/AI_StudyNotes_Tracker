@@ -33,3 +33,10 @@ def upload_bytes(
 
 def get_public_url(supabase: Client, path: str) -> str:
     return supabase.storage.from_(settings.supabase_storage_bucket).get_public_url(path)
+
+
+def remove_storage_objects(supabase: Client, paths: list[str]) -> None:
+    if not paths:
+        return
+
+    supabase.storage.from_(settings.supabase_storage_bucket).remove(paths)

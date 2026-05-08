@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.supabase import get_supabase
 from app.models.schemas import DocumentStatus, NoteTone
 from app.services.pdf_service import extract_pdf_pages
-from app.services.storage_service import ensure_storage_bucket, get_public_url, upload_bytes
+from app.services.storage_service import ensure_storage_bucket, get_public_url, remove_storage_objects, upload_bytes
 
 router = APIRouter()
 
@@ -177,10 +177,13 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
                     on_conflict="document_id,page_number",
                 ).execute()
 
+        remove_storage_objects(supabase, [document["storage_path"]])
+
         supabase.table("documents").update(
             {
                 "status": DocumentStatus.uploaded.value,
                 "page_count": len(page_rows),
+                "file_url": None,
                 "failure_reason": None,
             }
         ).eq("id", document_id).execute()

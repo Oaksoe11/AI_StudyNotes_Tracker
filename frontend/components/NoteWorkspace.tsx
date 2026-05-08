@@ -37,6 +37,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "kept" | "deleting" | "regenerating" | "error">("idle");
   const [showReviewActions, setShowReviewActions] = useState(true);
   const folderId = note.folder_id ?? note.documents?.folder_id;
+  const sourceFile = note.documents?.file_name || note.documents?.title;
 
   const createdDate = useMemo(() => {
     if (!note.created_at) {
@@ -115,7 +116,10 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
           </span>
           <div>
             <h1 className="text-3xl font-semibold tracking-normal">{title}</h1>
-            <p className="text-muted">Tone: {tone} · Created {createdDate}</p>
+            <p className="text-muted">
+              Tone: {tone} · Created {createdDate}
+              {sourceFile ? ` · Source: ${sourceFile}` : ""}
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

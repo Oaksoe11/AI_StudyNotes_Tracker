@@ -113,7 +113,7 @@ def get_note(note_id: str, current_user: dict = Depends(get_current_user)) -> di
     try:
         response = (
             supabase.table("notes")
-            .select("*")
+            .select("*, documents(folder_id,title,file_name)")
             .eq("id", note_id)
             .eq("user_id", current_user["id"])
             .single()
