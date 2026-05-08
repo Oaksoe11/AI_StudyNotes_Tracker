@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BookOpen, FileText, FolderOpen } from "lucide-react";
 
 import { DeleteButton } from "@/components/DeleteButton";
@@ -20,11 +21,7 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
   try {
     data = await serverApiGet<FolderDetail>(`/folders/${folderId}`);
   } catch {
-    data = {
-      folder: { id: folderId, name: "Folder" },
-      documents: [],
-      notes: []
-    };
+    redirect("/folders");
   }
 
   return (

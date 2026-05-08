@@ -64,14 +64,17 @@ def delete_folder(folder_id: str, current_user: dict = Depends(get_current_user)
 @router.get("/{folder_id}")
 def get_folder(folder_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
-    folder_response = (
-        supabase.table("folders")
-        .select("*")
-        .eq("id", folder_id)
-        .eq("user_id", current_user["id"])
-        .single()
-        .execute()
-    )
+    try:
+        folder_response = (
+            supabase.table("folders")
+            .select("*")
+            .eq("id", folder_id)
+            .eq("user_id", current_user["id"])
+            .single()
+            .execute()
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="Folder not found") from exc
 
     if not folder_response.data:
         raise HTTPException(status_code=404, detail="Folder not found")

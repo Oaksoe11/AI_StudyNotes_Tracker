@@ -39,11 +39,7 @@ def generate_notes(slides: list[dict], tone: NoteTone = NoteTone.concise) -> str
     genai.configure(api_key=settings.gemini_api_key)
     model = genai.GenerativeModel(settings.gemini_model)
 
-    slide_text = "\n\n".join(
-        f"Slide {slide['page_number']}:\n{slide.get('extracted_text') or slide.get('text') or '[No extractable text]'}"
-        for slide in slides
-    )
-    prompt = f"{BASE_PROMPT}\n\nTone rules:\n{TONE_PROMPTS.get(tone, TONE_PROMPTS[NoteTone.concise])}\n\nLecture content:\n{slide_text}"
+    prompt = _build_prompt(slides, tone)
     parts: list[dict | str] = [prompt]
 
     for slide in _slides_with_images(slides):
@@ -57,6 +53,30 @@ def generate_notes(slides: list[dict], tone: NoteTone = NoteTone.concise) -> str
 
     try:
         response = model.generate_content(parts)
+    except Exception as exc:
+        if len(parts) > 1:
+            return _generate_text_only_notes(model, prompt)
+        raise GeminiGenerationError(f"Gemini generation failed: {exc}") from exc
+
+    if not response.text:
+        raise GeminiGenerationError("Gemini returned an empty response.")
+
+    return response.text
+
+
+def _build_prompt(slides: list[dict], tone: NoteTone) -> str:
+    slide_text = "\n\n".join(
+        f"Slide {slide['page_number']}:\n{slide.get('extracted_text') or slide.get('text') or '[No extractable text]'}"
+        for slide in slides
+    )
+    return f"{BASE_PROMPT}\n\nTone rules:\n{TONE_PROMPTS.get(tone, TONE_PROMPTS[NoteTone.concise])}\n\nLecture content:\n{slide_text}"
+
+
+def _generate_text_only_notes(model, prompt: str) -> str:
+    try:
+        response = model.generate_content(
+            f"{prompt}\n\nNote: Image analysis failed, so create the best possible notes from the extracted slide text only."
+        )
     except Exception as exc:
         raise GeminiGenerationError(f"Gemini generation failed: {exc}") from exc
 

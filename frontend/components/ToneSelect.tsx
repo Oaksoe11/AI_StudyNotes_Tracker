@@ -13,19 +13,22 @@ const tones: { value: Tone; label: string }[] = [
   { value: "beginner", label: "Beginner" }
 ];
 
-export function ToneSelect({ documentId }: { documentId: string }) {
+export function ToneSelect({ documentId, disabled = false }: { documentId: string; disabled?: boolean }) {
   const router = useRouter();
   const [tone, setTone] = useState<Tone>("concise");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [error, setError] = useState("");
 
   async function handleGenerate() {
     setStatus("loading");
+    setError("");
 
     try {
-      await generateNotes(documentId, tone);
+      const response = await generateNotes(documentId, tone);
       setStatus("done");
-      router.refresh();
-    } catch {
+      router.push(`/notes/${response.note_id}`);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Generation failed");
       setStatus("error");
     }
   }
@@ -49,14 +52,14 @@ export function ToneSelect({ documentId }: { documentId: string }) {
       <button
         type="button"
         onClick={handleGenerate}
-        disabled={status === "loading"}
+        disabled={status === "loading" || disabled}
         className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-coral px-4 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
       >
         <WandSparkles size={16} />
         {status === "loading" ? "Generating" : "Generate notes"}
       </button>
-      {status === "done" ? <p className="self-center text-sm text-emerald-700">Notes generated</p> : null}
-      {status === "error" ? <p className="self-center text-sm text-red-700">Generation failed</p> : null}
+      {status === "done" ? <p className="self-center text-sm text-emerald-700">Opening note...</p> : null}
+      {status === "error" ? <p className="self-center text-sm text-red-700">{error}</p> : null}
     </div>
   );
 }

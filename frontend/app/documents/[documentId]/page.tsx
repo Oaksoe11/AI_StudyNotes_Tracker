@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 
 import { DeleteButton } from "@/components/DeleteButton";
 import { ExtractButton } from "@/components/ExtractButton";
@@ -35,9 +35,17 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
       notes: []
     };
   }
+  const pageCount = data.pages.length || data.document.page_count || 0;
+  const hasExtractedSlides = pageCount > 0;
+  const hasNotes = data.notes.length > 0;
 
   return (
     <div className="space-y-6">
+      <Link href="/documents" className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-coral">
+        <ArrowLeft size={16} />
+        Back to documents
+      </Link>
+
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-md bg-mint">
@@ -56,23 +64,34 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Metric label="Extracted pages" value={data.pages.length || data.document.page_count} />
-        <Metric label="Generated notes" value={data.notes.length} />
-        <Metric label="Processing state" value={data.document.status} />
-      </div>
-
       {data.document.failure_reason ? (
         <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           {data.document.failure_reason}
         </div>
       ) : null}
 
-      <ExtractButton documentId={data.document.id} />
-      <ToneSelect documentId={data.document.id} />
+      <section className="space-y-4 rounded-md border border-line bg-card p-4 shadow-sm">
+        <div>
+          <h2 className="text-lg font-semibold">Next step</h2>
+          <p className="mt-1 text-sm text-muted">
+            {hasNotes
+              ? "Your notes are ready. Open them below, or generate another version with a different tone."
+              : hasExtractedSlides
+                ? "Slide text is ready. Choose a tone and generate your notes."
+                : "Extract the PDF first. This saves slide text and small preview images for note generation."}
+          </p>
+        </div>
+        {hasExtractedSlides ? <ToneSelect documentId={data.document.id} /> : <ExtractButton documentId={data.document.id} />}
+      </section>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <Metric label="Slides extracted" value={pageCount} />
+        <Metric label="Notes" value={data.notes.length} />
+        <Metric label="Status" value={data.document.status} />
+      </div>
 
       <section className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
-        <h2 className="font-semibold">Extracted slides</h2>
+        <h2 className="font-semibold">Slide preview</h2>
         {data.pages.length ? (
           data.pages.slice(0, 8).map((page) => (
             <div key={page.id} className="rounded-md border border-line p-3">

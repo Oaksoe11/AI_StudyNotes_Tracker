@@ -86,10 +86,17 @@ export async function generateNotes(documentId: string, tone: Tone) {
   });
 
   if (!response.ok) {
-    throw new Error("Note generation failed");
+    let message = "Note generation failed";
+    try {
+      const body = await response.json();
+      message = body.detail || message;
+    } catch {
+      // Keep the default message if the server did not return JSON.
+    }
+    throw new Error(message);
   }
 
-  return response.json();
+  return response.json() as Promise<{ note_id: string; note: { title: string; content: string } }>;
 }
 
 export async function updateNote(noteId: string, payload: { title?: string; content?: string }) {
