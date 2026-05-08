@@ -32,10 +32,12 @@ export function PdfUpload({ folderId }: { folderId: string }) {
     setStatus("uploading");
 
     try {
-      await uploadPdf(folderId, tone, file);
-      setStatus("uploaded");
+      const response = await uploadPdf(folderId, tone, file);
       setFile(null);
+      setStatus("idle");
+      setIsOpen(false);
       router.refresh();
+      router.push(`/documents/${response.document_id}`);
     } catch {
       setStatus("error");
     }

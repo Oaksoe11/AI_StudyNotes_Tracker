@@ -1,33 +1,37 @@
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any
 
 import fitz
 
 
-def extract_pdf_pages(pdf_bytes: bytes) -> list[dict[str, Any]]:
-    with TemporaryDirectory() as temp_dir:
-        pdf_path = Path(temp_dir) / "lecture.pdf"
-        pdf_path.write_bytes(pdf_bytes)
+def extract_pdf_pages(
+    pdf_bytes: bytes,
+    max_pages: int = 20,
+    image_scale: float = 0.9,
+) -> list[dict[str, Any]]:
+    document = fitz.open(stream=pdf_bytes, filetype="pdf")
+    pages: list[dict[str, Any]] = []
 
-        document = fitz.open(pdf_path)
-        pages: list[dict[str, Any]] = []
+    try:
+        page_limit = min(document.page_count, max_pages)
+        matrix = fitz.Matrix(image_scale, image_scale)
 
-        for page_index, page in enumerate(document):
-            pixmap = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+        for page_index in range(page_limit):
+            page = document.load_page(page_index)
+            text = page.get_text("text").strip()
+            pixmap = page.get_pixmap(matrix=matrix, alpha=False)
             image_name = f"page-{page_index + 1}.png"
-            image_path = Path(temp_dir) / image_name
-            pixmap.save(image_path)
 
             pages.append(
                 {
                     "page_number": page_index + 1,
-                    "text": page.get_text("text").strip(),
-                    "image_bytes": image_path.read_bytes(),
+                    "text": text,
+                    "image_bytes": pixmap.tobytes("png"),
                     "image_name": image_name,
                 }
             )
 
+            pixmap = None
+    finally:
         document.close()
-        return pages
 
+    return pages

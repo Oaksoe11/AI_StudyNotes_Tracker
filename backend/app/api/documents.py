@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.supabase import get_supabase
 from app.models.schemas import DocumentStatus, NoteTone
 from app.services.pdf_service import extract_pdf_pages
-from app.services.storage_service import get_public_url, upload_bytes
+from app.services.storage_service import ensure_storage_bucket, get_public_url, upload_bytes
 
 router = APIRouter()
 
@@ -136,14 +136,19 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
 
     try:
         pdf_bytes = supabase.storage.from_(settings.supabase_storage_bucket).download(document["storage_path"])
-        pages = extract_pdf_pages(pdf_bytes)
+        pages = extract_pdf_pages(
+            pdf_bytes,
+            max_pages=settings.pdf_max_pages,
+            image_scale=settings.pdf_image_scale,
+        )
 
         slide_bucket = f"{document['folder_id']}/{document_id}/slides"
         page_rows = []
+        ensure_storage_bucket(supabase)
 
         for page in pages:
             image_storage_path = f"{slide_bucket}/{page['image_name']}"
-            upload_bytes(supabase, image_storage_path, page["image_bytes"], "image/png")
+            upload_bytes(supabase, image_storage_path, page["image_bytes"], "image/png", ensure_bucket=False)
             page_rows.append(
                 {
                     "document_id": document_id,

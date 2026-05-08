@@ -59,7 +59,7 @@ export async function apiDelete<T>(path: string): Promise<T> {
   return response.json();
 }
 
-export async function uploadPdf(folderId: string, tone: Tone, file: File) {
+export async function uploadPdf(folderId: string, tone: Tone, file: File): Promise<{ document_id: string }> {
   const formData = new FormData();
   formData.append("folder_id", folderId);
   formData.append("tone", tone);

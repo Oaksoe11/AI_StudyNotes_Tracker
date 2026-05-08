@@ -19,8 +19,10 @@ def upload_bytes(
     path: str,
     content: bytes,
     content_type: str,
+    ensure_bucket: bool = True,
 ) -> str:
-    ensure_storage_bucket(supabase)
+    if ensure_bucket:
+        ensure_storage_bucket(supabase)
     supabase.storage.from_(settings.supabase_storage_bucket).upload(
         path,
         content,
