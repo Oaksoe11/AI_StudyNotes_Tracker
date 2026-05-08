@@ -49,6 +49,7 @@ export function AppSidebar() {
     const supabase = getSupabaseClient();
     await supabase?.auth.signOut();
     document.cookie = "sb-access-token=; path=/; max-age=0; SameSite=Lax";
+    window.location.assign("/login");
   }
 
   useEffect(() => {

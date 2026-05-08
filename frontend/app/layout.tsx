@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { AppFrame } from "@/components/AppFrame";
-import { AuthGate } from "@/components/AuthGate";
 
 import "./globals.css";
 
@@ -23,9 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         />
       </head>
       <body>
-        <AuthGate>
-          <AppFrame>{children}</AppFrame>
-        </AuthGate>
+        <AppFrame>{children}</AppFrame>
       </body>
     </html>
   );

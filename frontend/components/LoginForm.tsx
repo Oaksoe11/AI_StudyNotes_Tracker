@@ -2,12 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { LogIn, UserPlus } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { getSupabaseClient } from "@/lib/supabase";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -41,8 +39,7 @@ export function LoginForm() {
     document.cookie = `sb-access-token=${result.data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
 
     setStatus("success");
-    router.replace("/dashboard");
-    router.refresh();
+    window.location.assign("/dashboard");
   }
 
   return (
