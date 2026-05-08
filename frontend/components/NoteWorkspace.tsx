@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, Download, FileText, RefreshCw, Save, SquarePen, X } from "lucide-react";
+import { ArrowLeft, Check, Download, FileText, RefreshCw, Save, SquarePen, Trash2, X } from "lucide-react";
 
-import { generateNotes, Tone, updateNote } from "@/lib/api";
+import { apiDelete, generateNotes, Tone, updateNote } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
   { value: "concise", label: "Concise" },
@@ -28,11 +29,13 @@ type NoteWorkspaceProps = {
 };
 
 export function NoteWorkspace({ note }: NoteWorkspaceProps) {
+  const router = useRouter();
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [tone, setTone] = useState<Tone>(note.tone);
   const [isEditing, setIsEditing] = useState(false);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "regenerating" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "kept" | "deleting" | "regenerating" | "error">("idle");
+  const [showReviewActions, setShowReviewActions] = useState(true);
   const folderId = note.folder_id ?? note.documents?.folder_id;
 
   const createdDate = useMemo(() => {
@@ -68,6 +71,26 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
       setTitle(next.title);
       setContent(next.content);
       setStatus("saved");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  function handleKeep() {
+    setShowReviewActions(false);
+    setStatus("kept");
+  }
+
+  async function handleDeleteNote() {
+    if (!window.confirm("Delete this generated note?")) {
+      return;
+    }
+
+    setStatus("deleting");
+
+    try {
+      await apiDelete(`/notes/${note.id}`);
+      router.push(folderId ? `/folders/${folderId}` : "/notes");
     } catch {
       setStatus("error");
     }
@@ -121,6 +144,34 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         </div>
       </div>
 
+      {showReviewActions ? (
+        <div className="flex flex-col justify-between gap-3 rounded-md border border-line bg-card p-4 shadow-sm md:flex-row md:items-center">
+          <div>
+            <h2 className="font-semibold">Keep this generated note?</h2>
+            <p className="mt-1 text-sm text-muted">Save it in your notes, or discard it if this version is not useful.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleKeep}
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-coral px-3 text-sm font-medium text-white shadow-sm transition hover:bg-berry"
+            >
+              <Check size={15} />
+              Keep note
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteNote}
+              disabled={status === "deleting"}
+              className="inline-flex min-h-10 items-center gap-2 rounded-md border border-red-400/40 px-3 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-60 dark:text-red-300"
+            >
+              <Trash2 size={15} />
+              {status === "deleting" ? "Deleting" : "Delete note"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="rounded-md border border-line bg-card p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1 text-sm font-medium">
@@ -148,6 +199,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
           </button>
         </div>
         {status === "saved" ? <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Saved</p> : null}
+        {status === "kept" ? <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Note kept</p> : null}
         {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">Action failed. Try again.</p> : null}
       </div>
 

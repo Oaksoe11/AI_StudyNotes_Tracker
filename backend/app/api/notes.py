@@ -146,6 +146,23 @@ def update_note(note_id: str, payload: dict, current_user: dict = Depends(get_cu
     return response.data[0]
 
 
+@router.delete("/{note_id}")
+def delete_note(note_id: str, current_user: dict = Depends(get_current_user)) -> dict:
+    supabase = get_supabase()
+    response = (
+        supabase.table("notes")
+        .delete()
+        .eq("id", note_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    return {"deleted": True, "note_id": note_id}
+
+
 def _attach_slide_images(supabase, slides: list[dict]) -> list[dict]:
     enriched = []
 
