@@ -74,6 +74,8 @@ create table if not exists public.quizzes (
   document_id uuid references public.documents(id) on delete cascade,
   note_id uuid references public.notes(id) on delete set null,
   title text not null,
+  difficulty text not null default 'mixed' check (difficulty in ('mixed', 'easy', 'medium', 'hard')),
+  is_saved boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -94,6 +96,8 @@ alter table public.documents add column if not exists file_url text;
 alter table public.documents add column if not exists title text;
 alter table public.documents add column if not exists selected_tone text not null default 'concise';
 alter table public.documents add column if not exists failure_reason text;
+alter table public.quizzes add column if not exists difficulty text not null default 'mixed';
+alter table public.quizzes add column if not exists is_saved boolean not null default true;
 alter table public.document_pages add column if not exists image_url text;
 alter table public.slides add column if not exists image_url text;
 alter table public.slides add column if not exists image_storage_path text;

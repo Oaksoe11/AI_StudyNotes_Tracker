@@ -11,11 +11,6 @@ from app.services.gemini_service import GeminiGenerationError
 QUIZ_PROMPT = """
 You are an expert teaching assistant creating a practice quiz from lecture slides.
 
-Create exactly 15 multiple-choice questions:
-- 5 easy questions for recall and definitions
-- 5 medium questions for explaining and comparing ideas
-- 5 hard questions for applying, analyzing, or solving with the ideas
-
 Return only valid JSON. Do not wrap it in Markdown.
 
 JSON shape:
@@ -40,8 +35,15 @@ Rules:
 - Make questions useful for studying, not trick questions.
 """.strip()
 
+DIFFICULTY_RULES = {
+    "mixed": "Create exactly 15 questions: 5 easy recall questions, 5 medium concept questions, and 5 hard application/analysis questions.",
+    "easy": "Create exactly 15 easy questions focused on definitions, recall, and basic understanding. Set every level to easy.",
+    "medium": "Create exactly 15 medium questions focused on explaining concepts, comparing ideas, and connecting details. Set every level to medium.",
+    "hard": "Create exactly 15 hard questions focused on applying ideas, analyzing examples, and solving with the lecture concepts. Set every level to hard.",
+}
 
-def generate_quiz(slides: list[dict[str, Any]], note_content: str | None = None) -> dict[str, Any]:
+
+def generate_quiz(slides: list[dict[str, Any]], note_content: str | None = None, difficulty: str = "mixed") -> dict[str, Any]:
     if not settings.gemini_api_key:
         raise GeminiGenerationError("GEMINI_API_KEY is not configured.")
 
@@ -52,7 +54,8 @@ def generate_quiz(slides: list[dict[str, Any]], note_content: str | None = None)
         for slide in slides
     )
     note_context = f"\n\nGenerated notes:\n{note_content}" if note_content else ""
-    prompt = f"{QUIZ_PROMPT}\n\nLecture slides:\n{slide_text}{note_context}"
+    difficulty = difficulty if difficulty in DIFFICULTY_RULES else "mixed"
+    prompt = f"{QUIZ_PROMPT}\n\nDifficulty rules:\n{DIFFICULTY_RULES[difficulty]}\n\nLecture slides:\n{slide_text}{note_context}"
 
     try:
         response = model.generate_content(prompt)
@@ -70,7 +73,7 @@ def generate_quiz(slides: list[dict[str, Any]], note_content: str | None = None)
 
     return {
         "title": quiz.get("title") or "Practice quiz",
-        "questions": [_normalize_question(question, index) for index, question in enumerate(questions[:15])],
+        "questions": [_normalize_question(question, index, difficulty) for index, question in enumerate(questions[:15])],
     }
 
 
@@ -86,8 +89,10 @@ def _parse_quiz_json(text: str) -> dict[str, Any]:
         raise GeminiGenerationError("Gemini returned quiz data that was not valid JSON.") from exc
 
 
-def _normalize_question(question: dict[str, Any], index: int) -> dict[str, Any]:
+def _normalize_question(question: dict[str, Any], index: int, difficulty: str = "mixed") -> dict[str, Any]:
     level = str(question.get("level") or "").lower()
+    if difficulty in {"easy", "medium", "hard"}:
+        level = difficulty
     if level not in {"easy", "medium", "hard"}:
         level = "easy" if index < 5 else "medium" if index < 10 else "hard"
 

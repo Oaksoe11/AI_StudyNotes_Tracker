@@ -7,10 +7,10 @@ import { useRouter } from "next/navigation";
 import { generateNotes, Tone } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
-  { value: "concise", label: "Concise" },
-  { value: "detailed", label: "Detailed" },
+  { value: "concise", label: "Quick study notes" },
+  { value: "detailed", label: "Full lecture notes" },
   { value: "exam_prep", label: "Exam prep" },
-  { value: "beginner", label: "Beginner" }
+  { value: "beginner", label: "Explain like I'm new" }
 ];
 
 export function ToneSelect({ documentId, disabled = false }: { documentId: string; disabled?: boolean }) {

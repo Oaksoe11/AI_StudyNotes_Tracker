@@ -16,6 +16,7 @@ def list_quizzes(current_user: dict = Depends(get_current_user)) -> list[dict]:
         supabase.table("quizzes")
         .select("*, documents(title,file_name)")
         .eq("user_id", current_user["id"])
+        .eq("is_saved", True)
         .order("created_at", desc=True)
         .execute()
     )
@@ -78,7 +79,7 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
         raise HTTPException(status_code=400, detail="Extract PDF content before generating a quiz.")
 
     try:
-        quiz_data = generate_quiz(slides_response.data, note.get("content") if note else None)
+        quiz_data = generate_quiz(slides_response.data, note.get("content") if note else None, payload.difficulty)
     except GeminiGenerationError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -91,6 +92,8 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
                 "document_id": document["id"],
                 "note_id": note["id"] if note else None,
                 "title": quiz_data["title"],
+                "difficulty": payload.difficulty,
+                "is_saved": payload.save_quiz,
             }
         )
         .execute()

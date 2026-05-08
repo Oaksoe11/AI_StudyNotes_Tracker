@@ -126,7 +126,9 @@ export async function extractDocument(documentId: string) {
   return response.json();
 }
 
-export async function generateQuiz(payload: { document_id?: string; note_id?: string }) {
+export type QuizDifficulty = "mixed" | "easy" | "medium" | "hard";
+
+export async function generateQuiz(payload: { document_id?: string; note_id?: string; difficulty?: QuizDifficulty; save_quiz?: boolean }) {
   const response = await fetch(`${apiUrl}/quizzes/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },

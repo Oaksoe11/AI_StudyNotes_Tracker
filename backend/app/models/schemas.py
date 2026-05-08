@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -36,3 +36,5 @@ class GenerateNotesRequest(BaseModel):
 class GenerateQuizRequest(BaseModel):
     document_id: Optional[str] = None
     note_id: Optional[str] = None
+    difficulty: Literal["mixed", "easy", "medium", "hard"] = "mixed"
+    save_quiz: bool = True

@@ -10,10 +10,10 @@ import { GenerateQuizButton } from "@/components/GenerateQuizButton";
 import { apiDelete, generateNotes, Tone, updateNote } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
-  { value: "concise", label: "Concise" },
-  { value: "detailed", label: "Detailed" },
+  { value: "concise", label: "Quick study notes" },
+  { value: "detailed", label: "Full lecture notes" },
   { value: "exam_prep", label: "Exam prep" },
-  { value: "beginner", label: "Beginner" }
+  { value: "beginner", label: "Explain like I'm new" }
 ];
 
 type NoteWorkspaceProps = {

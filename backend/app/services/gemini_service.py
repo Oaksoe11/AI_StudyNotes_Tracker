@@ -30,10 +30,10 @@ deeply nested lists, and long dense bullets.
 """.strip()
 
 TONE_PROMPTS = {
-    NoteTone.concise: "Write compact lecture notes with only the most important ideas.",
-    NoteTone.detailed: "Write thorough lecture notes with definitions, examples, and structure.",
+    NoteTone.concise: "Write quick study notes for review. Keep only the main ideas, key terms, and must-remember points.",
+    NoteTone.detailed: "Write full lecture notes with clear sections, explanations, definitions, examples, and useful context.",
     NoteTone.exam_prep: "Write exam-focused notes with likely test points, formulas, and quick review bullets.",
-    NoteTone.beginner: "Write beginner-friendly notes that explain jargon and build intuition.",
+    NoteTone.beginner: "Explain the lecture like I am new to the topic. Use simple language, define jargon, and build intuition step by step.",
 }
 
 
