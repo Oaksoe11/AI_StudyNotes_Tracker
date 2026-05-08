@@ -67,6 +67,29 @@ create table if not exists public.notes (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.quizzes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  folder_id uuid references public.folders(id) on delete cascade,
+  document_id uuid references public.documents(id) on delete cascade,
+  note_id uuid references public.notes(id) on delete set null,
+  title text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.quiz_questions (
+  id uuid primary key default gen_random_uuid(),
+  quiz_id uuid references public.quizzes(id) on delete cascade,
+  level text not null check (level in ('easy', 'medium', 'hard')),
+  question text not null,
+  choices jsonb not null default '[]'::jsonb,
+  correct_answer text not null,
+  explanation text not null,
+  page_reference text,
+  position integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
 alter table public.documents add column if not exists file_url text;
 alter table public.documents add column if not exists title text;
 alter table public.documents add column if not exists selected_tone text not null default 'concise';
@@ -89,3 +112,5 @@ alter table public.documents enable row level security;
 alter table public.slides enable row level security;
 alter table public.document_pages enable row level security;
 alter table public.notes enable row level security;
+alter table public.quizzes enable row level security;
+alter table public.quiz_questions enable row level security;

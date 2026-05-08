@@ -31,3 +31,8 @@ class GenerateNotesRequest(BaseModel):
     document_id: str
     tone: NoteTone = NoteTone.concise
     title: Optional[str] = None
+
+
+class GenerateQuizRequest(BaseModel):
+    document_id: Optional[str] = None
+    note_id: Optional[str] = None

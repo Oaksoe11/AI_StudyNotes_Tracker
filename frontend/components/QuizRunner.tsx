@@ -1,0 +1,140 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, CircleAlert } from "lucide-react";
+
+type Quiz = {
+  id: string;
+  title: string;
+  document_id?: string;
+  documents?: { title?: string; file_name?: string };
+};
+
+type Question = {
+  id: string;
+  level: "easy" | "medium" | "hard";
+  question: string;
+  choices: string[];
+  correct_answer: string;
+  explanation: string;
+  page_reference?: string;
+  position: number;
+};
+
+const levelLabels = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard"
+};
+
+export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Question[] }) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const score = useMemo(
+    () => questions.filter((question) => answers[question.id] === question.correct_answer).length,
+    [answers, questions]
+  );
+  const source = quiz.documents?.file_name || quiz.documents?.title;
+
+  function selectAnswer(questionId: string, choice: string) {
+    if (submitted) {
+      return;
+    }
+    setAnswers((current) => ({ ...current, [questionId]: choice }));
+  }
+
+  return (
+    <article className="space-y-6">
+      <Link href="/notes" className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-coral">
+        <ArrowLeft size={16} />
+        Back to notes
+      </Link>
+
+      <header className="rounded-md border border-line bg-card p-5 shadow-sm">
+        <p className="text-sm font-medium text-coral">Practice quiz</p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-normal">{quiz.title}</h1>
+        <p className="mt-2 text-muted">
+          15 questions across easy, medium, and hard levels{source ? ` · Source: ${source}` : ""}
+        </p>
+      </header>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        {(["easy", "medium", "hard"] as const).map((level) => (
+          <div key={level} className="rounded-md border border-line bg-card p-4 shadow-sm">
+            <p className="text-sm text-muted">{levelLabels[level]}</p>
+            <p className="mt-2 text-2xl font-semibold">{questions.filter((question) => question.level === level).length}</p>
+          </div>
+        ))}
+      </section>
+
+      <div className="space-y-4">
+        {questions.map((question) => {
+          const selected = answers[question.id];
+          const isCorrect = selected === question.correct_answer;
+
+          return (
+            <section key={question.id} className="rounded-md border border-line bg-card p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md border border-line px-2 py-1 text-xs font-medium text-muted">
+                  {levelLabels[question.level]}
+                </span>
+                {question.page_reference ? <span className="text-xs text-muted">{question.page_reference}</span> : null}
+              </div>
+              <h2 className="mt-3 font-semibold">{question.position}. {question.question}</h2>
+              <div className="mt-3 grid gap-2">
+                {question.choices.map((choice) => {
+                  const isSelected = selected === choice;
+                  const showCorrect = submitted && choice === question.correct_answer;
+                  const showWrong = submitted && isSelected && !showCorrect;
+
+                  return (
+                    <button
+                      key={choice}
+                      type="button"
+                      onClick={() => selectAnswer(question.id, choice)}
+                      className={`min-h-11 rounded-md border px-3 text-left text-sm transition ${
+                        showCorrect
+                          ? "border-emerald-400 bg-emerald-400/12 text-emerald-700 dark:text-emerald-300"
+                          : showWrong
+                            ? "border-red-400 bg-red-400/12 text-red-700 dark:text-red-300"
+                            : isSelected
+                              ? "border-coral bg-coral/10"
+                              : "border-line hover:border-coral"
+                      }`}
+                    >
+                      {choice}
+                    </button>
+                  );
+                })}
+              </div>
+              {submitted ? (
+                <div className="mt-3 flex gap-2 rounded-md border border-line bg-paper/60 p-3 text-sm">
+                  {isCorrect ? <CheckCircle2 size={17} className="mt-0.5 text-emerald-600" /> : <CircleAlert size={17} className="mt-0.5 text-red-600" />}
+                  <p>
+                    <span className="font-medium">{isCorrect ? "Correct." : `Answer: ${question.correct_answer}.`}</span>{" "}
+                    {question.explanation}
+                  </p>
+                </div>
+              ) : null}
+            </section>
+          );
+        })}
+      </div>
+
+      <div className="sticky bottom-4 flex flex-col gap-3 rounded-md border border-line bg-card/95 p-4 shadow-lg backdrop-blur md:flex-row md:items-center md:justify-between">
+        <p className="font-medium">
+          {submitted ? `Score: ${score}/${questions.length}` : `${Object.keys(answers).length}/${questions.length} answered`}
+        </p>
+        <button
+          type="button"
+          onClick={() => setSubmitted(true)}
+          disabled={submitted || Object.keys(answers).length < questions.length}
+          className="inline-flex min-h-10 items-center justify-center rounded-md bg-coral px-4 text-sm font-medium text-white shadow-sm transition hover:bg-berry disabled:opacity-60"
+        >
+          {submitted ? "Submitted" : "Submit quiz"}
+        </button>
+      </div>
+    </article>
+  );
+}

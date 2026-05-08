@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Check, Download, FileText, RefreshCw, Save, SquarePen, Trash2, X } from "lucide-react";
 
+import { GenerateQuizButton } from "@/components/GenerateQuizButton";
 import { apiDelete, generateNotes, Tone, updateNote } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
@@ -145,6 +146,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
             <Download size={15} />
             Export
           </button>
+          {note.document_id ? <GenerateQuizButton noteId={note.id} label="Generate quiz" /> : null}
         </div>
       </div>
 

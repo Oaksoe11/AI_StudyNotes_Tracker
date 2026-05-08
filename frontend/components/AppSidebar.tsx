@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, FileText, FolderOpen, LayoutDashboard, LogOut, MoonStar, Upload } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, FileText, FolderOpen, LayoutDashboard, ListChecks, LogOut, MoonStar, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -29,7 +29,8 @@ const mainLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/folders", label: "Folders", icon: FolderOpen },
   { href: "/documents", label: "Documents", icon: Upload },
-  { href: "/notes", label: "Notes", icon: BookOpen }
+  { href: "/notes", label: "Notes", icon: BookOpen },
+  { href: "/quizzes", label: "Quizzes", icon: ListChecks }
 ];
 
 export function AppSidebar() {

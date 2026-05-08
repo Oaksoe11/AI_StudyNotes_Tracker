@@ -5,6 +5,7 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { DeleteButton } from "@/components/DeleteButton";
 import { DocumentProgress } from "@/components/DocumentProgress";
 import { ExtractButton } from "@/components/ExtractButton";
+import { GenerateQuizButton } from "@/components/GenerateQuizButton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ToneSelect } from "@/components/ToneSelect";
 import { serverApiGet } from "@/lib/server-api";
@@ -91,6 +92,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           </p>
         </div>
         {hasExtractedSlides ? <ToneSelect documentId={data.document.id} /> : <ExtractButton documentId={data.document.id} />}
+        {hasExtractedSlides ? <GenerateQuizButton documentId={data.document.id} label="Practice this lecture" /> : null}
       </section>
 
       <div className="grid gap-3 md:grid-cols-3">
