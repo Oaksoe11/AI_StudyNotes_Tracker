@@ -36,7 +36,7 @@ export function DocumentsList({ documents }: { documents: Document[] }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search documents"
-          className="min-h-11 w-full rounded-md border border-line bg-card pl-10 pr-3 text-sm outline-none transition focus:border-coral"
+          className="min-h-11 w-full rounded-md border border-line bg-card pl-10 pr-3 text-sm outline-none shadow-sm transition focus:border-coral"
         />
       </label>
 
@@ -46,7 +46,7 @@ export function DocumentsList({ documents }: { documents: Document[] }) {
             <Link
               key={document.id}
               href={`/documents/${document.id}`}
-              className="flex items-center justify-between gap-4 rounded-md border border-line bg-card p-4 shadow-sm transition hover:border-coral"
+              className="interactive-row flex items-center justify-between gap-4 rounded-md p-4"
             >
               <span className="flex min-w-0 items-center gap-3">
                 <FileText size={18} className="text-coral" />
@@ -60,7 +60,7 @@ export function DocumentsList({ documents }: { documents: Document[] }) {
           ))}
         </div>
       ) : (
-        <p className="rounded-md border border-line bg-card p-4 text-sm text-muted">No documents match your search.</p>
+        <p className="soft-card rounded-md p-4 text-sm text-muted">No documents match your search.</p>
       )}
     </div>
   );

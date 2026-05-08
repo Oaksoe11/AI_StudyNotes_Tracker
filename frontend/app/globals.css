@@ -4,34 +4,32 @@
 
 :root {
   color-scheme: light;
-  --paper: 210 40% 98%;
+  --paper: 210 33% 97%;
   --card: 0 0% 100%;
-  --ink: 213 31% 13%;
-  --muted: 215 16% 43%;
-  --line: 214 32% 88%;
-  --mint: 145 64% 88%;
-  --coral: 10 90% 64%;
-  --berry: 330 71% 56%;
-  --sky: 199 86% 60%;
+  --ink: 222 28% 12%;
+  --muted: 218 12% 42%;
+  --line: 214 28% 86%;
+  --mint: 160 58% 86%;
+  --coral: 9 86% 61%;
+  --berry: 335 65% 54%;
+  --sky: 205 88% 57%;
 }
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, hsl(var(--mint) / 0.65), transparent 32rem),
-    radial-gradient(circle at top right, hsl(var(--sky) / 0.22), transparent 26rem),
-    hsl(var(--paper));
+  background: linear-gradient(180deg, hsl(var(--paper)), hsl(210 32% 94%));
   color: hsl(var(--ink));
+  text-rendering: optimizeLegibility;
 }
 
 .dark {
   color-scheme: dark;
-  --paper: 222 30% 8%;
-  --card: 222 24% 12%;
+  --paper: 224 26% 8%;
+  --card: 224 21% 12%;
   --ink: 210 35% 96%;
-  --muted: 215 18% 70%;
-  --line: 221 18% 24%;
-  --mint: 151 38% 30%;
+  --muted: 216 15% 68%;
+  --line: 222 16% 23%;
+  --mint: 159 34% 27%;
   --coral: 12 78% 62%;
   --berry: 330 58% 66%;
   --sky: 199 70% 62%;
@@ -49,7 +47,7 @@ a {
 input,
 select,
 textarea {
-  background: hsl(var(--paper) / 0.72);
+  background: hsl(var(--card));
   color: hsl(var(--ink));
 }
 
@@ -66,6 +64,43 @@ input::file-selector-button {
   font: inherit;
   margin-right: 0.75rem;
   padding: 0.35rem 0.75rem;
+}
+
+button,
+input,
+select,
+textarea,
+a {
+  outline-color: hsl(var(--coral));
+}
+
+.app-surface {
+  background: hsl(var(--card) / 0.88);
+  border: 1px solid hsl(var(--line));
+  box-shadow: 0 12px 30px hsl(222 22% 12% / 0.06);
+}
+
+.dark .app-surface {
+  box-shadow: 0 16px 36px hsl(0 0% 0% / 0.18);
+}
+
+.soft-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--line));
+  box-shadow: 0 8px 24px hsl(222 22% 12% / 0.05);
+}
+
+.interactive-row {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--line));
+  box-shadow: 0 6px 18px hsl(222 22% 12% / 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.interactive-row:hover {
+  border-color: hsl(var(--coral) / 0.65);
+  box-shadow: 0 12px 28px hsl(222 22% 12% / 0.08);
+  transform: translateY(-1px);
 }
 
 .note-markdown {

@@ -19,7 +19,8 @@ export default async function FoldersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="app-surface rounded-md p-5">
+        <p className="text-sm font-medium text-coral">Library</p>
         <h1 className="text-3xl font-semibold tracking-normal">Folders</h1>
         <p className="mt-2 text-muted">Manage course folders and open their lecture materials.</p>
       </div>
@@ -27,9 +28,11 @@ export default async function FoldersPage() {
       {folders.length ? (
         <div className="grid gap-3 md:grid-cols-3">
           {folders.map((folder) => (
-            <div key={folder.id} className="rounded-md border border-line bg-card p-4 shadow-sm transition hover:border-coral">
+            <div key={folder.id} className="interactive-row rounded-md p-4">
               <Link href={`/folders/${folder.id}`} className="block">
-                <FolderOpen className="mb-4 text-coral" size={22} />
+                <span className="mb-4 grid size-10 place-items-center rounded-md border border-line bg-mint/70 text-ink">
+                  <FolderOpen className="text-coral" size={20} />
+                </span>
                 <h2 className="font-semibold">{folder.name}</h2>
                 <p className="mt-1 text-sm text-muted">Open folder</p>
               </Link>

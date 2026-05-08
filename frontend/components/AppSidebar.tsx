@@ -92,17 +92,20 @@ export function AppSidebar() {
   }
 
   return (
-    <aside className="flex h-full min-h-screen flex-col border-r border-line bg-card/90 shadow-sm backdrop-blur">
+    <aside className="sticky top-0 flex h-screen min-h-screen flex-col border-r border-line bg-card/95 shadow-sm backdrop-blur">
       <div className="border-b border-line p-4">
-        <Link href="/dashboard" className="flex items-center gap-3 font-semibold">
-          <span className="grid size-10 place-items-center rounded-md bg-coral text-white shadow-sm">
+        <Link href="/dashboard" className="flex items-center gap-3 rounded-md p-1 font-semibold transition hover:bg-mint/30 dark:hover:bg-mint/15">
+          <span className="grid size-10 place-items-center rounded-md bg-coral text-white shadow-sm shadow-coral/20">
             <BookOpen size={19} />
           </span>
-          <span>Study Notes</span>
+          <span>
+            <span className="block leading-tight">Study Notes</span>
+            <span className="block text-xs font-medium text-muted">AI lecture workspace</span>
+          </span>
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto px-3 py-4">
         <section className="space-y-1">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted">Main</p>
           {mainLinks.map((item) => {
@@ -112,7 +115,7 @@ export function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${
-                  isActive ? "bg-coral text-white shadow-sm" : "text-muted hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
+                  isActive ? "bg-coral text-white shadow-sm shadow-coral/20" : "text-muted hover:bg-mint/40 hover:text-ink dark:hover:bg-mint/18"
                 }`}
               >
                 <item.icon size={16} />
@@ -120,7 +123,7 @@ export function AppSidebar() {
               </Link>
             );
           })}
-          <div className="flex items-center justify-between gap-3 rounded-md px-3 py-2">
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-line bg-paper/50 px-3 py-2">
             <span className="flex items-center gap-3 text-sm font-medium text-muted">
               <MoonStar size={16} />
               Dark mode
@@ -130,7 +133,7 @@ export function AppSidebar() {
           <button
             type="button"
             onClick={logout}
-            className="flex min-h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-muted transition hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
+            className="mt-1 flex min-h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-muted transition hover:bg-mint/40 hover:text-ink dark:hover:bg-mint/18"
           >
             <LogOut size={16} />
             Log out
@@ -147,7 +150,7 @@ export function AppSidebar() {
                 <button
                   type="button"
                   onClick={() => toggleFolder(folder.id)}
-                  className="flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-left text-sm font-medium text-muted transition hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
+                  className="flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-left text-sm font-medium text-muted transition hover:bg-mint/40 hover:text-ink dark:hover:bg-mint/18"
                 >
                   {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                   <FolderOpen size={15} />
@@ -164,7 +167,7 @@ export function AppSidebar() {
                           className={`flex min-h-9 items-center gap-2 rounded-md px-2 text-sm transition ${
                             pathname === `/notes/${note.id}`
                               ? "bg-coral/15 text-coral"
-                              : "text-muted hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
+                              : "text-muted hover:bg-mint/40 hover:text-ink dark:hover:bg-mint/18"
                           }`}
                         >
                           <FileText size={14} />

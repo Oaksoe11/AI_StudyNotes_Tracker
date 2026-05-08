@@ -26,10 +26,10 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      <div className="app-surface flex flex-col justify-between gap-4 rounded-md p-5 md:flex-row md:items-center">
         <div>
           <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-md bg-mint">
+            <span className="grid size-10 place-items-center rounded-md border border-line bg-mint/70">
               <FolderOpen size={20} />
             </span>
             <div>
@@ -50,11 +50,11 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
       </div>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
+        <div className="soft-card space-y-3 rounded-md p-4">
           <h2 className="font-semibold">Uploaded PDFs</h2>
           {data.documents.length ? (
             data.documents.map((document) => (
-              <div key={document.id} className="flex items-center gap-3 rounded-md border border-line p-3">
+              <div key={document.id} className="interactive-row flex items-center gap-3 rounded-md p-3">
                 <Link href={`/documents/${document.id}`} className="flex min-w-0 flex-1 items-center gap-3 hover:text-coral">
                   <FileText size={18} className="text-coral" />
                   <span className="min-w-0 flex-1 truncate">{document.title || document.file_name}</span>
@@ -71,11 +71,11 @@ export default async function FolderDetailPage({ params }: { params: Promise<{ f
             <EmptyState icon={<FileText size={20} />} title="Empty folder" description="Upload a lecture PDF to start extracting slides and generating notes." />
           )}
         </div>
-        <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
+        <div className="soft-card space-y-3 rounded-md p-4">
           <h2 className="font-semibold">Notes</h2>
           {data.notes.length ? (
             data.notes.map((note) => (
-              <Link key={note.id} href={`/notes/${note.id}`} className="flex items-center gap-3 rounded-md border border-line p-3 hover:border-coral">
+              <Link key={note.id} href={`/notes/${note.id}`} className="interactive-row flex items-center gap-3 rounded-md p-3">
                 <BookOpen size={18} className="text-coral" />
                 <span className="flex-1">{note.title}</span>
                 <span className="text-sm text-muted">{note.tone}</span>

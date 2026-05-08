@@ -26,12 +26,12 @@ export function FolderForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-md border border-line bg-card shadow-sm p-4 sm:flex-row">
+    <form onSubmit={handleSubmit} className="app-surface flex flex-col gap-3 rounded-md p-4 sm:flex-row">
       <input
         value={name}
         onChange={(event) => setName(event.target.value)}
         placeholder="Course folder name"
-        className="min-h-11 flex-1 rounded-md border border-line px-3 text-sm outline-none focus:border-coral"
+        className="min-h-11 flex-1 rounded-md border border-line px-3 text-sm outline-none transition focus:border-coral"
         required
       />
       <button

@@ -12,9 +12,9 @@ export function ActionCard({ href, icon, title, description }: ActionCardProps) 
   return (
     <Link
       href={href}
-      className="group rounded-md border border-line bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-coral hover:shadow-md"
+      className="group soft-card rounded-md p-4 transition hover:-translate-y-0.5 hover:border-coral"
     >
-      <div className="mb-4 grid size-10 place-items-center rounded-md bg-mint text-ink transition group-hover:bg-coral group-hover:text-white">
+      <div className="mb-4 grid size-10 place-items-center rounded-md border border-line bg-mint/70 text-ink transition group-hover:border-coral group-hover:bg-coral group-hover:text-white">
         {icon}
       </div>
       <h2 className="font-semibold">{title}</h2>

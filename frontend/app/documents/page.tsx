@@ -26,7 +26,8 @@ export default async function DocumentsPage() {
   return (
     <div className="space-y-6">
       <AutoRefresh enabled={hasProcessingDocuments} />
-      <div>
+      <div className="app-surface rounded-md p-5">
+        <p className="text-sm font-medium text-coral">Library</p>
         <h1 className="text-3xl font-semibold tracking-normal">Documents</h1>
         <p className="mt-2 text-muted">Uploaded PDFs and their processing states.</p>
       </div>
