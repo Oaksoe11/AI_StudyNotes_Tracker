@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ListChecks } from "lucide-react";
 
 import { EmptyState } from "@/components/EmptyState";
+import { QuizManageActions } from "@/components/QuizManageActions";
+import { quizPath } from "@/lib/quiz-path";
 import { serverApiGet } from "@/lib/server-api";
 
 type Quiz = {
@@ -9,6 +11,7 @@ type Quiz = {
   title: string;
   created_at?: string;
   documents?: { title?: string; file_name?: string };
+  folders?: { name?: string };
 };
 
 export default async function QuizzesPage() {
@@ -30,19 +33,19 @@ export default async function QuizzesPage() {
       {quizzes.length ? (
         <div className="grid gap-3">
           {quizzes.map((quiz) => (
-            <Link
+            <div
               key={quiz.id}
-              href={`/quizzes/${quiz.id}`}
-              className="flex items-center justify-between gap-4 rounded-md border border-line bg-card p-4 shadow-sm transition hover:border-coral"
+              className="flex flex-col justify-between gap-4 rounded-md border border-line bg-card p-4 shadow-sm transition hover:border-coral md:flex-row md:items-center"
             >
-              <span className="flex min-w-0 items-center gap-3">
-                <ListChecks size={18} className="text-coral" />
-                <span className="min-w-0">
+              <Link href={`/quizzes/${quiz.id}`} className="flex min-w-0 items-center gap-3 hover:text-coral">
+                <ListChecks size={18} className="shrink-0 text-coral" />
+                <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{quiz.title}</span>
-                  <span className="text-sm text-muted">{quiz.documents?.file_name || quiz.documents?.title || "Practice quiz"}</span>
+                  <span className="block truncate font-mono text-xs text-muted">{quizPath(quiz)}</span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+              <QuizManageActions quizId={quiz.id} title={quiz.title} />
+            </div>
           ))}
         </div>
       ) : (

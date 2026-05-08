@@ -14,7 +14,7 @@ def list_quizzes(current_user: dict = Depends(get_current_user)) -> list[dict]:
     supabase = get_supabase()
     response = (
         supabase.table("quizzes")
-        .select("*, documents(title,file_name)")
+        .select("*, documents(title,file_name), folders(name)")
         .eq("user_id", current_user["id"])
         .eq("is_saved", True)
         .order("created_at", desc=True)
@@ -110,7 +110,7 @@ def get_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)) -> di
     supabase = get_supabase()
     quiz_response = (
         supabase.table("quizzes")
-        .select("*, documents(title,file_name)")
+        .select("*, documents(title,file_name), folders(name)")
         .eq("id", quiz_id)
         .eq("user_id", current_user["id"])
         .single()
@@ -130,3 +130,41 @@ def get_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)) -> di
     )
 
     return {"quiz": quiz, "questions": questions_response.data}
+
+
+@router.patch("/{quiz_id}")
+def update_quiz(quiz_id: str, payload: dict, current_user: dict = Depends(get_current_user)) -> dict:
+    allowed = {key: payload[key] for key in ("title", "is_saved") if key in payload}
+    if not allowed:
+        raise HTTPException(status_code=400, detail="No quiz fields to update.")
+
+    supabase = get_supabase()
+    response = (
+        supabase.table("quizzes")
+        .update(allowed)
+        .eq("id", quiz_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+
+    return response.data[0]
+
+
+@router.delete("/{quiz_id}")
+def delete_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)) -> dict:
+    supabase = get_supabase()
+    response = (
+        supabase.table("quizzes")
+        .delete()
+        .eq("id", quiz_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+
+    return {"deleted": True, "quiz_id": quiz_id}

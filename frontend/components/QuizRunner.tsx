@@ -4,11 +4,15 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CircleAlert } from "lucide-react";
 
+import { QuizManageActions } from "@/components/QuizManageActions";
+import { quizPath } from "@/lib/quiz-path";
+
 type Quiz = {
   id: string;
   title: string;
   document_id?: string;
   documents?: { title?: string; file_name?: string };
+  folders?: { name?: string };
 };
 
 type Question = {
@@ -35,7 +39,7 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
     () => questions.filter((question) => answers[question.id] === question.correct_answer).length,
     [answers, questions]
   );
-  const source = quiz.documents?.file_name || quiz.documents?.title;
+  const path = quizPath(quiz);
 
   function selectAnswer(questionId: string, choice: string) {
     if (submitted) {
@@ -51,12 +55,14 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
         Back to notes
       </Link>
 
-      <header className="rounded-md border border-line bg-card p-5 shadow-sm">
-        <p className="text-sm font-medium text-coral">Practice quiz</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-normal">{quiz.title}</h1>
-        <p className="mt-2 text-muted">
-          15 questions across easy, medium, and hard levels{source ? ` · Source: ${source}` : ""}
-        </p>
+      <header className="flex flex-col justify-between gap-4 rounded-md border border-line bg-card p-5 shadow-sm lg:flex-row lg:items-start">
+        <div>
+          <p className="text-sm font-medium text-coral">Practice quiz</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-normal">{quiz.title}</h1>
+          <p className="mt-2 text-muted">15 questions across easy, medium, and hard levels</p>
+          <p className="mt-2 break-all font-mono text-xs text-muted">{path}</p>
+        </div>
+        <QuizManageActions quizId={quiz.id} title={quiz.title} redirectTo="/quizzes" />
       </header>
 
       <section className="grid gap-3 md:grid-cols-3">

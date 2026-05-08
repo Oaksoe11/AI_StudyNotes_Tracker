@@ -7,6 +7,7 @@ type QuizDetail = {
     title: string;
     document_id?: string;
     documents?: { title?: string; file_name?: string };
+    folders?: { name?: string };
   };
   questions: {
     id: string;

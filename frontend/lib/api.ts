@@ -59,6 +59,20 @@ export async function apiDelete<T>(path: string): Promise<T> {
   return response.json();
 }
 
+export async function apiPatch<T>(path: string, payload: unknown): Promise<T> {
+  const response = await fetch(`${apiUrl}${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function uploadPdf(folderId: string, tone: Tone, file: File): Promise<{ document_id: string }> {
   const formData = new FormData();
   formData.append("folder_id", folderId);
