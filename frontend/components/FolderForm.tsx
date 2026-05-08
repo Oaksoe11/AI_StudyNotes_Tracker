@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 
+import { apiPost } from "@/lib/api";
+
 export function FolderForm() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -14,16 +16,7 @@ export function FolderForm() {
     setStatus("saving");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/folders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name })
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to create folder");
-      }
-
+      await apiPost("/folders", { name });
       setName("");
       setStatus("saved");
       router.refresh();

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { AppFrame } from "@/components/AppFrame";
+import { SessionSync } from "@/components/SessionSync";
 
 import "./globals.css";
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         />
       </head>
       <body>
+        <SessionSync />
         <AppFrame>{children}</AppFrame>
       </body>
     </html>
