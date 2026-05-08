@@ -35,10 +35,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <section className="app-surface flex flex-col justify-between gap-4 rounded-md p-5 md:flex-row md:items-end">
+      <section className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="text-sm font-medium text-coral">Workspace</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-normal">Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-normal">Dashboard</h1>
           <p className="mt-2 text-muted">Folders, PDFs, and generated notes for your current study flow.</p>
         </div>
         <Link
@@ -99,7 +98,7 @@ export default async function DashboardPage() {
 
 function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
-    <div className="soft-card rounded-md p-4">
+    <div className="rounded-md border border-line bg-card shadow-sm p-4">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted">{label}</span>
         <span className="text-coral">{icon}</span>
@@ -111,7 +110,7 @@ function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; v
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="soft-card space-y-3 rounded-md p-4">
+    <div className="space-y-3 rounded-md border border-line bg-card shadow-sm p-4">
       <h2 className="font-semibold">{title}</h2>
       <div className="space-y-2">{children}</div>
     </div>

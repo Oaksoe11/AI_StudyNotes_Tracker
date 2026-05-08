@@ -109,7 +109,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
 
   return (
     <article className="space-y-6">
-      <div className="app-surface flex flex-col justify-between gap-4 rounded-md p-5 lg:flex-row lg:items-start">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
         <div className="flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-md bg-mint">
             <FileText size={20} />
@@ -176,7 +176,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         </div>
       ) : null}
 
-      <div className="soft-card rounded-md p-4">
+      <div className="rounded-md border border-line bg-card p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1 text-sm font-medium">
             Regenerate tone
@@ -207,7 +207,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">Action failed. Try again.</p> : null}
       </div>
 
-      <div className="soft-card overflow-hidden rounded-md">
+      <div className="overflow-hidden rounded-md border border-line bg-card shadow-sm">
         {isEditing ? (
           <div className="space-y-4 p-5">
             <input

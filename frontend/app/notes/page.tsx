@@ -22,8 +22,7 @@ export default async function NotesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="app-surface rounded-md p-5">
-        <p className="text-sm font-medium text-coral">Library</p>
+      <div>
         <h1 className="text-3xl font-semibold tracking-normal">Notes</h1>
         <p className="mt-2 text-muted">Generated lecture notes ready to review or edit.</p>
       </div>

@@ -31,7 +31,7 @@ export function NotesList({ notes }: { notes: Note[] }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search notes"
-          className="min-h-11 w-full rounded-md border border-line bg-card pl-10 pr-3 text-sm outline-none shadow-sm transition focus:border-coral"
+          className="min-h-11 w-full rounded-md border border-line bg-card pl-10 pr-3 text-sm outline-none transition focus:border-coral"
         />
       </label>
 
@@ -41,7 +41,7 @@ export function NotesList({ notes }: { notes: Note[] }) {
             <Link
               key={note.id}
               href={`/notes/${note.id}`}
-              className="interactive-row flex items-center justify-between gap-4 rounded-md p-4"
+              className="flex items-center justify-between gap-4 rounded-md border border-line bg-card p-4 shadow-sm transition hover:border-coral"
             >
               <span className="flex min-w-0 items-center gap-3">
                 <BookOpen size={18} className="text-coral" />
@@ -54,7 +54,7 @@ export function NotesList({ notes }: { notes: Note[] }) {
           ))}
         </div>
       ) : (
-        <p className="soft-card rounded-md p-4 text-sm text-muted">No notes match your search.</p>
+        <p className="rounded-md border border-line bg-card p-4 text-sm text-muted">No notes match your search.</p>
       )}
     </div>
   );
