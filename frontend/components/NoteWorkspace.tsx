@@ -151,9 +151,9 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">Action failed. Try again.</p> : null}
       </div>
 
-      <div className="rounded-md border border-line bg-card p-6 shadow-sm">
+      <div className="overflow-hidden rounded-md border border-line bg-card shadow-sm">
         {isEditing ? (
-          <div className="space-y-4">
+          <div className="space-y-4 p-5">
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
@@ -162,7 +162,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
             <textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              className="min-h-[420px] w-full rounded-md border border-line px-3 py-3 font-mono text-sm outline-none focus:border-coral"
+              className="min-h-[520px] w-full rounded-md border border-line px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-coral"
             />
             <div className="flex justify-end gap-2">
               <button
@@ -189,8 +189,10 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
             </div>
           </div>
         ) : (
-          <div className="prose max-w-none prose-neutral dark:prose-invert">
+          <div className="max-h-[68vh] overflow-y-auto px-5 py-6 md:px-8">
+            <div className="note-markdown mx-auto max-w-3xl">
             <ReactMarkdown>{content}</ReactMarkdown>
+            </div>
           </div>
         )}
       </div>

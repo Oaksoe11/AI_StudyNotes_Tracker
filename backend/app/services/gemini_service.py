@@ -16,12 +16,17 @@ and visual layouts when slide images are attached. Prefer accurate, student-usef
 generic summaries.
 
 Return structured Markdown with:
-- A meaningful title
-- Key concepts
-- Important definitions
+- One H1 title only
+- Short H2 sections with plain-language names
+- Brief paragraphs before lists when context is useful
+- Clean bullet lists with bold labels only when they improve scanning
+- Important definitions in a compact list
 - Examples, equations, or algorithms when present
 - Diagram or visual explanations when useful
 - A short review checklist
+
+Keep the output easy to read in a Notion-style document. Avoid excessive horizontal rules,
+deeply nested lists, and long dense bullets.
 """.strip()
 
 TONE_PROMPTS = {
