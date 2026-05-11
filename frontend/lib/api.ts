@@ -1,11 +1,100 @@
+import { getSupabaseClient } from "@/lib/supabase";
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const requestTimeoutMs = 30000;
+
+export class ApiError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+// Student note:
+// Users should never see scary low-level errors like "Failed to fetch".
+// This helper converts network/status problems into messages that explain what to do next.
+export function friendlyErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return "The server is taking too long to respond. Please wait a moment and try again.";
+  }
+
+  if (error instanceof TypeError) {
+    return "The app cannot reach the backend right now. Check that the server is running, then refresh.";
+  }
+
+  if (error instanceof Error) {
+    return error.message || "Something went wrong. Please try again.";
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), requestTimeoutMs);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function responseMessage(response: Response, fallback: string): Promise<string> {
+  let detail = "";
+
+  try {
+    const body = await response.json();
+    detail = typeof body.detail === "string" ? body.detail : "";
+  } catch {
+    // Keep using the fallback if the backend did not return JSON.
+  }
+
+  if (detail) {
+    return detail;
+  }
+
+  if (response.status === 401) {
+    return "Your login session expired. Please sign in again.";
+  }
+
+  if (response.status === 429) {
+    return "The AI service is busy or at its limit. Please wait a minute and try again.";
+  }
+
+  if (response.status === 502) {
+    return "The AI service could not finish this request. Please try again shortly.";
+  }
+
+  if (response.status === 503) {
+    return "The backend is not fully configured or is temporarily unavailable.";
+  }
+
+  if (response.status >= 500) {
+    return "The server had a problem. Please try again, or refresh the page.";
+  }
+
+  return fallback;
+}
+
+async function ensureOk(response: Response, fallback: string): Promise<void> {
+  if (!response.ok) {
+    throw new ApiError(await responseMessage(response, fallback), response.status);
+  }
+}
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   if (typeof window === "undefined") {
     return {};
   }
 
-  const { getSupabaseClient } = await import("@/lib/supabase");
   const supabase = getSupabaseClient();
 
   if (!supabase) {
@@ -20,55 +109,47 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 export type Tone = "concise" | "detailed" | "exam_prep" | "beginner";
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetchWithTimeout(`${apiUrl}${path}`, {
     cache: "no-store",
     headers: await getAuthHeaders()
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
-  }
+  await ensureOk(response, "Could not load this information. Please refresh and try again.");
 
   return response.json();
 }
 
 export async function apiPost<T>(path: string, payload: unknown): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetchWithTimeout(`${apiUrl}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
-  }
+  await ensureOk(response, "Could not save this. Please check your connection and try again.");
 
   return response.json();
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetchWithTimeout(`${apiUrl}${path}`, {
     method: "DELETE",
     headers: await getAuthHeaders()
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
-  }
+  await ensureOk(response, "Could not delete this item. Please try again.");
 
   return response.json();
 }
 
 export async function apiPatch<T>(path: string, payload: unknown): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetchWithTimeout(`${apiUrl}${path}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
-  }
+  await ensureOk(response, "Could not update this item. Please try again.");
 
   return response.json();
 }
@@ -79,63 +160,48 @@ export async function uploadPdf(folderId: string, tone: Tone, file: File): Promi
   formData.append("tone", tone);
   formData.append("file", file);
 
-  const response = await fetch(`${apiUrl}/documents/upload`, {
+  const response = await fetchWithTimeout(`${apiUrl}/documents/upload`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: formData
   });
 
-  if (!response.ok) {
-    throw new Error("Upload failed");
-  }
+  await ensureOk(response, "Upload failed. Please choose a valid PDF and try again.");
 
   return response.json();
 }
 
 export async function generateNotes(documentId: string, tone: Tone) {
-  const response = await fetch(`${apiUrl}/notes/generate`, {
+  const response = await fetchWithTimeout(`${apiUrl}/notes/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify({ document_id: documentId, tone })
   });
 
-  if (!response.ok) {
-    let message = "Note generation failed";
-    try {
-      const body = await response.json();
-      message = body.detail || message;
-    } catch {
-      // Keep the default message if the server did not return JSON.
-    }
-    throw new Error(message);
-  }
+  await ensureOk(response, "Note generation failed. Please try again shortly.");
 
   return response.json() as Promise<{ note_id: string; note: { title: string; content: string } }>;
 }
 
 export async function updateNote(noteId: string, payload: { title?: string; content?: string }) {
-  const response = await fetch(`${apiUrl}/notes/${noteId}`, {
+  const response = await fetchWithTimeout(`${apiUrl}/notes/${noteId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    throw new Error("Note update failed");
-  }
+  await ensureOk(response, "Could not save the note. Please try again.");
 
   return response.json();
 }
 
 export async function extractDocument(documentId: string) {
-  const response = await fetch(`${apiUrl}/documents/${documentId}/extract`, {
+  const response = await fetchWithTimeout(`${apiUrl}/documents/${documentId}/extract`, {
     method: "POST",
     headers: await getAuthHeaders()
   });
 
-  if (!response.ok) {
-    throw new Error("PDF extraction failed");
-  }
+  await ensureOk(response, "PDF extraction failed. Please try a smaller or clearer PDF.");
 
   return response.json();
 }
@@ -143,22 +209,13 @@ export async function extractDocument(documentId: string) {
 export type QuizDifficulty = "mixed" | "easy" | "medium" | "hard";
 
 export async function generateQuiz(payload: { document_id?: string; note_id?: string; difficulty?: QuizDifficulty; save_quiz?: boolean }) {
-  const response = await fetch(`${apiUrl}/quizzes/generate`, {
+  const response = await fetchWithTimeout(`${apiUrl}/quizzes/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    let message = "Quiz generation failed";
-    try {
-      const body = await response.json();
-      message = body.detail || message;
-    } catch {
-      // Keep the default message if the server did not return JSON.
-    }
-    throw new Error(message);
-  }
+  await ensureOk(response, "Quiz generation failed. Please try again shortly.");
 
   return response.json() as Promise<{ quiz_id: string }>;
 }

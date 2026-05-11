@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, ChevronDown, ChevronRight, FileText, FolderOpen, LayoutDashboard, ListChecks, LogOut, Menu, MoonStar, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -36,6 +36,7 @@ const mainLinks = [
 ];
 
 export function AppSidebar() {
+  const router = useRouter();
   // usePathname tells us which page is active so we can highlight the current link.
   const pathname = usePathname();
   // Folders are loaded from the backend because each user has their own folders.
@@ -132,6 +133,12 @@ export function AppSidebar() {
     }
   }
 
+  function prefetchRoute(href: string) {
+    // Prefetching starts loading the next page before the user clicks.
+    // This makes tab/sidebar navigation feel faster.
+    router.prefetch(href);
+  }
+
   return (
     <>
       {/* Mobile header: this replaces the permanent sidebar on small screens. */}
@@ -196,6 +203,8 @@ export function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
+                onMouseEnter={() => prefetchRoute(item.href)}
+                onFocus={() => prefetchRoute(item.href)}
                 className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${
                   isActive ? "bg-coral text-white shadow-sm" : "text-muted hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
                 }`}
@@ -233,6 +242,8 @@ export function AppSidebar() {
                 <button
                   type="button"
                   onClick={() => toggleFolder(folder.id)}
+                  onMouseEnter={() => prefetchRoute(`/folders/${folder.id}`)}
+                  onFocus={() => prefetchRoute(`/folders/${folder.id}`)}
                   className="flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-left text-sm font-medium text-muted transition hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
                 >
                   {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
@@ -248,6 +259,8 @@ export function AppSidebar() {
                           key={note.id}
                           href={`/notes/${note.id}`}
                           onClick={() => setIsMobileMenuOpen(false)}
+                          onMouseEnter={() => prefetchRoute(`/notes/${note.id}`)}
+                          onFocus={() => prefetchRoute(`/notes/${note.id}`)}
                           className={`flex min-h-9 items-center gap-2 rounded-md px-2 text-sm transition ${
                             pathname === `/notes/${note.id}`
                               ? "bg-coral/15 text-coral"

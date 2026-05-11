@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { BookOpen, FileText, FolderOpen } from "lucide-react";
+import { BookOpen, CircleAlert, FileText, FolderOpen } from "lucide-react";
 
 import { DeleteButton } from "@/components/DeleteButton";
 import { EmptyState } from "@/components/EmptyState";
 import { PdfUpload } from "@/components/PdfUpload";
 import { StatusBadge } from "@/components/StatusBadge";
-import { serverApiGet } from "@/lib/server-api";
+import { serverApiGet, serverFriendlyErrorMessage } from "@/lib/server-api";
 
 type FolderDetail = {
   folder: { id: string; name: string };
@@ -16,12 +15,24 @@ type FolderDetail = {
 
 export default async function FolderDetailPage({ params }: { params: Promise<{ folderId: string }> }) {
   const { folderId } = await params;
-  let data: FolderDetail;
+  let data: FolderDetail | null = null;
+  let error = "";
 
   try {
     data = await serverApiGet<FolderDetail>(`/folders/${folderId}`);
-  } catch {
-    redirect("/folders");
+  } catch (caughtError) {
+    error = serverFriendlyErrorMessage(caughtError);
+  }
+
+  if (!data) {
+    return (
+      <div className="space-y-6">
+        <Link href="/folders" className="text-sm font-medium text-muted hover:text-coral">
+          Back to folders
+        </Link>
+        <EmptyState icon={<CircleAlert size={20} />} title="Could not load folder" description={error} />
+      </div>
+    );
   }
 
   return (

@@ -21,7 +21,7 @@ def list_documents(current_user: dict = Depends(get_current_user)) -> list[dict]
     # This is important because every student should only see their own uploads.
     response = (
         supabase.table("documents")
-        .select("*")
+        .select("id,title,file_name,status,created_at")
         .eq("user_id", current_user["id"])
         .order("created_at", desc=True)
         .execute()
@@ -173,6 +173,38 @@ def delete_document(document_id: str, current_user: dict = Depends(get_current_u
     return {"deleted": True, "document_id": document_id}
 
 
+@router.get("/{document_id}/status")
+def get_document_status(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
+    supabase = get_supabase()
+    # Student note:
+    # This tiny endpoint is for live progress polling.
+    # It returns only the fields the progress bar needs instead of the full document, slides, and notes.
+    document_response = (
+        supabase.table("documents")
+        .select("id,status,page_count,failure_reason,processing_step,processing_current,processing_total")
+        .eq("id", document_id)
+        .eq("user_id", current_user["id"])
+        .single()
+        .execute()
+    )
+
+    if not document_response.data:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    notes_response = (
+        supabase.table("notes")
+        .select("id")
+        .eq("document_id", document_id)
+        .eq("user_id", current_user["id"])
+        .execute()
+    )
+
+    return {
+        **document_response.data,
+        "note_count": len(notes_response.data or []),
+    }
+
+
 def process_document_extraction(document_id: str, user_id: str | None = None, raise_errors: bool = False) -> int:
     supabase = get_supabase()
     # Look up the document. When user_id is passed, this also protects against cross-user access.
@@ -189,9 +221,15 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
         return 0
 
     # Tell the UI that extraction started.
-    supabase.table("documents").update(
-        {"status": DocumentStatus.extracting.value, "failure_reason": None}
-    ).eq("id", document_id).execute()
+    _update_document_progress(
+        supabase,
+        document_id,
+        status=DocumentStatus.extracting.value,
+        step="Starting extraction",
+        current=0,
+        total=0,
+        failure_reason=None,
+    )
 
     try:
         # Download the original PDF from storage so PyMuPDF can read it.
@@ -201,13 +239,29 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
             pdf_bytes,
             max_pages=settings.pdf_max_pages,
             image_scale=settings.pdf_image_scale,
+            progress_callback=lambda current, total: _update_document_progress(
+                supabase,
+                document_id,
+                status=DocumentStatus.extracting.value,
+                step="Extracting slide text and images",
+                current=current,
+                total=total,
+            ),
         )
 
         slide_bucket = f"{document['folder_id']}/{document_id}/slides"
         page_rows = []
         ensure_storage_bucket(supabase)
 
-        for page in pages:
+        for index, page in enumerate(pages, start=1):
+            _update_document_progress(
+                supabase,
+                document_id,
+                status=DocumentStatus.extracting.value,
+                step="Saving slide images",
+                current=index,
+                total=len(pages),
+            )
             # Each rendered slide image gets its own storage path.
             image_storage_path = f"{slide_bucket}/{page['image_name']}"
             upload_bytes(supabase, image_storage_path, page["image_bytes"], "image/png", ensure_bucket=False)
@@ -246,22 +300,26 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
         remove_storage_objects(supabase, [document["storage_path"]])
 
         # Mark extraction as ready. In this MVP, uploaded means "ready to generate notes".
-        supabase.table("documents").update(
-            {
-                "status": DocumentStatus.uploaded.value,
-                "page_count": len(page_rows),
-                "file_url": None,
-                "failure_reason": None,
-            }
-        ).eq("id", document_id).execute()
+        _update_document_progress(
+            supabase,
+            document_id,
+            status=DocumentStatus.uploaded.value,
+            step="Extraction complete",
+            current=len(page_rows),
+            total=len(page_rows),
+            page_count=len(page_rows),
+            file_url=None,
+            failure_reason=None,
+        )
     except Exception as exc:
         # Save the error reason so the frontend can show what went wrong.
-        supabase.table("documents").update(
-            {
-                "status": DocumentStatus.failed.value,
-                "failure_reason": f"PDF extraction failed: {exc}",
-            }
-        ).eq("id", document_id).execute()
+        _update_document_progress(
+            supabase,
+            document_id,
+            status=DocumentStatus.failed.value,
+            step="Extraction failed",
+            failure_reason=f"PDF extraction failed: {exc}",
+        )
         if raise_errors:
             raise
         return 0
@@ -315,3 +373,46 @@ def _safe_pdf_filename(filename: str | None) -> str:
     if not name.lower().endswith(".pdf"):
         name = f"{name}.pdf"
     return name
+
+
+def _update_document_progress(
+    supabase,
+    document_id: str,
+    *,
+    status: str | None = None,
+    step: str | None = None,
+    current: int | None = None,
+    total: int | None = None,
+    page_count: int | None = None,
+    file_url: str | None = None,
+    failure_reason: str | None = None,
+) -> None:
+    # Student note:
+    # This helper updates the document row with progress info for the UI.
+    # It also has a fallback so older databases without progress columns still work.
+    updates = {}
+    if status is not None:
+        updates["status"] = status
+    if page_count is not None:
+        updates["page_count"] = page_count
+    if file_url is not None or file_url is None and page_count is not None:
+        updates["file_url"] = file_url
+    if failure_reason is not None:
+        updates["failure_reason"] = failure_reason
+    elif status in {DocumentStatus.extracting.value, DocumentStatus.uploaded.value}:
+        updates["failure_reason"] = None
+
+    progress_updates = {
+        **updates,
+        "processing_step": step,
+        "processing_current": current,
+        "processing_total": total,
+    }
+
+    try:
+        supabase.table("documents").update(progress_updates).eq("id", document_id).execute()
+    except Exception:
+        # If the deployment has not run the newest schema migration yet,
+        # still update the basic status fields instead of failing extraction.
+        if updates:
+            supabase.table("documents").update(updates).eq("id", document_id).execute()

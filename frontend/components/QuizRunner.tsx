@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CircleAlert } from "lucide-react";
 
 import { QuizManageActions } from "@/components/QuizManageActions";
+import { EmptyState } from "@/components/EmptyState";
 import { quizPath } from "@/lib/quiz-path";
 
 type Quiz = {
@@ -83,7 +84,8 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
         ))}
       </section>
 
-      <div className="space-y-4">
+      {questions.length ? (
+        <div className="space-y-4">
         {questions.map((question) => {
           // selected is undefined until the user chooses one answer.
           const selected = answers[question.id];
@@ -138,9 +140,16 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
             </section>
           );
         })}
-      </div>
+        </div>
+      ) : (
+        <EmptyState
+          icon={<CircleAlert size={20} />}
+          title="No questions available"
+          description="This quiz could not load its questions. Go back to a note or document and generate a new quiz."
+        />
+      )}
 
-      <div className="sticky bottom-4 flex flex-col gap-3 rounded-md border border-line bg-card/95 p-4 shadow-lg backdrop-blur md:flex-row md:items-center md:justify-between">
+      {questions.length ? <div className="sticky bottom-4 flex flex-col gap-3 rounded-md border border-line bg-card/95 p-4 shadow-lg backdrop-blur md:flex-row md:items-center md:justify-between">
         <p className="font-medium">
           {/* Before submit, show progress. After submit, show the final score. */}
           {submitted ? `Score: ${score}/${questions.length}` : `${Object.keys(answers).length}/${questions.length} answered`}
@@ -153,7 +162,7 @@ export function QuizRunner({ quiz, questions }: { quiz: Quiz; questions: Questio
         >
           {submitted ? "Submitted" : "Submit quiz"}
         </button>
-      </div>
+      </div> : null}
     </article>
   );
 }

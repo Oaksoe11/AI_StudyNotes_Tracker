@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { FileUp, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { Tone, uploadPdf } from "@/lib/api";
+import { friendlyErrorMessage, Tone, uploadPdf } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
   { value: "concise", label: "Quick study notes" },
@@ -19,17 +19,39 @@ export function PdfUpload({ folderId }: { folderId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [tone, setTone] = useState<Tone>("concise");
   const [status, setStatus] = useState<"idle" | "uploading" | "uploaded" | "error">("idle");
+  const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+
+  function chooseFile(nextFile: File | null) {
+    setFile(nextFile);
+
+    if (!nextFile) {
+      setError("");
+      setStatus("idle");
+      return;
+    }
+
+    if (nextFile.type !== "application/pdf") {
+      setError("That file is not a PDF. Choose a lecture PDF to upload.");
+      setStatus("error");
+      return;
+    }
+
+    setError("");
+    setStatus("idle");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!file || file.type !== "application/pdf") {
+      setError("Choose a PDF file before uploading.");
       setStatus("error");
       return;
     }
 
     setStatus("uploading");
+    setError("");
 
     try {
       const response = await uploadPdf(folderId, tone, file);
@@ -38,7 +60,8 @@ export function PdfUpload({ folderId }: { folderId: string }) {
       setIsOpen(false);
       router.refresh();
       router.push(`/documents/${response.document_id}`);
-    } catch {
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -81,7 +104,7 @@ export function PdfUpload({ folderId }: { folderId: string }) {
               onDrop={(event) => {
                 event.preventDefault();
                 setIsDragging(false);
-                setFile(event.dataTransfer.files?.[0] ?? null);
+                chooseFile(event.dataTransfer.files?.[0] ?? null);
               }}
               className={`mt-5 flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed p-6 text-center transition ${
                 isDragging ? "border-coral bg-coral/10" : "border-line bg-paper/60"
@@ -93,7 +116,7 @@ export function PdfUpload({ folderId }: { folderId: string }) {
               <input
                 type="file"
                 accept="application/pdf"
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
                 className="sr-only"
               />
             </label>
@@ -114,7 +137,7 @@ export function PdfUpload({ folderId }: { folderId: string }) {
             </label>
 
             {status === "uploaded" ? <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Upload complete</p> : null}
-            {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">Choose a valid PDF and try again.</p> : null}
+            {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">{error}</p> : null}
 
             <div className="mt-5 flex justify-end gap-3">
               <button

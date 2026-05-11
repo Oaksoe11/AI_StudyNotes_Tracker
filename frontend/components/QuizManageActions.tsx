@@ -4,19 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Save, Trash2, X } from "lucide-react";
 
-import { apiDelete, apiPatch } from "@/lib/api";
+import { apiDelete, apiPatch, friendlyErrorMessage } from "@/lib/api";
 
 type QuizManageActionsProps = {
   quizId: string;
   title: string;
   redirectTo?: string;
+  onDeleted?: () => void;
+  onRenamed?: (title: string) => void;
 };
 
-export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActionsProps) {
+export function QuizManageActions({ quizId, title, redirectTo, onDeleted, onRenamed }: QuizManageActionsProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [nextTitle, setNextTitle] = useState(title);
   const [status, setStatus] = useState<"idle" | "saving" | "deleting" | "error">("idle");
+  const [error, setError] = useState("");
 
   async function handleSave() {
     if (!nextTitle.trim()) {
@@ -24,13 +27,21 @@ export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActio
     }
 
     setStatus("saving");
+    setError("");
 
     try {
-      await apiPatch(`/quizzes/${quizId}`, { title: nextTitle.trim() });
+      const trimmedTitle = nextTitle.trim();
+      await apiPatch(`/quizzes/${quizId}`, { title: trimmedTitle });
+      // Student note:
+      // Tell the parent list the new title so it can update without a full page refresh.
+      onRenamed?.(trimmedTitle);
       setIsEditing(false);
       setStatus("idle");
-      router.refresh();
-    } catch {
+      if (!onRenamed) {
+        router.refresh();
+      }
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -41,15 +52,20 @@ export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActio
     }
 
     setStatus("deleting");
+    setError("");
 
     try {
       await apiDelete(`/quizzes/${quizId}`);
+      // Student note:
+      // If a parent list gave us an optimistic delete callback, use it for instant feedback.
+      onDeleted?.();
       if (redirectTo) {
         router.push(redirectTo);
-      } else {
+      } else if (!onDeleted) {
         router.refresh();
       }
-    } catch {
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -84,7 +100,7 @@ export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActio
             <X size={15} />
           </button>
         </div>
-        {status === "error" ? <p className="text-sm text-red-700 dark:text-red-300">Could not update quiz.</p> : null}
+        {status === "error" ? <p className="text-sm text-red-700 dark:text-red-300">{error}</p> : null}
       </div>
     );
   }
@@ -108,6 +124,7 @@ export function QuizManageActions({ quizId, title, redirectTo }: QuizManageActio
         <Trash2 size={15} />
         {status === "deleting" ? "Deleting" : "Delete"}
       </button>
+      {status === "error" ? <p className="text-sm text-red-700 dark:text-red-300">{error}</p> : null}
     </div>
   );
 }

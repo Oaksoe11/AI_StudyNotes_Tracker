@@ -115,14 +115,14 @@ def get_folder(folder_id: str, current_user: dict = Depends(get_current_user)) -
 
     documents_response = (
         supabase.table("documents")
-        .select("*")
+        .select("id,title,file_name,status,created_at")
         .eq("folder_id", folder_id)
         .eq("user_id", current_user["id"])
         .execute()
     )
     notes_response = (
         supabase.table("notes")
-        .select("*")
+        .select("id,title,tone,created_at")
         .eq("folder_id", folder_id)
         .eq("user_id", current_user["id"])
         .execute()

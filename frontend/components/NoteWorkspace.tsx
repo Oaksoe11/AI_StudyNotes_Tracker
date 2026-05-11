@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Check, Download, FileText, RefreshCw, Save, SquarePen, Trash2, X } from "lucide-react";
 
 import { GenerateQuizButton } from "@/components/GenerateQuizButton";
-import { apiDelete, generateNotes, Tone, updateNote } from "@/lib/api";
+import { apiDelete, friendlyErrorMessage, generateNotes, Tone, updateNote } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
   // These labels are what the student sees in the tone dropdown.
@@ -40,6 +40,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   const [isEditing, setIsEditing] = useState(false);
   // One status string controls button loading states and small messages.
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "kept" | "deleting" | "regenerating" | "error">("idle");
+  const [error, setError] = useState("");
   // New generated notes start with "keep or delete" actions.
   const [showReviewActions, setShowReviewActions] = useState(true);
   // The folder id might be directly on the note or nested inside the joined document.
@@ -58,12 +59,14 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   async function handleSave() {
     // Save the edited title/content to the backend.
     setStatus("saving");
+    setError("");
 
     try {
       await updateNote(note.id, { title, content });
       setStatus("saved");
       setIsEditing(false);
-    } catch {
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -71,11 +74,13 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   async function handleRegenerate() {
     // Regeneration needs a source document because the backend uses its extracted slides.
     if (!note.document_id) {
+      setError("This note is not linked to a document, so it cannot be regenerated.");
       setStatus("error");
       return;
     }
 
     setStatus("regenerating");
+    setError("");
 
     try {
       // Ask the backend to create a new note version with the selected tone.
@@ -85,7 +90,8 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
       setTitle(next.title);
       setContent(next.content);
       setStatus("saved");
-    } catch {
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -103,12 +109,14 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
     }
 
     setStatus("deleting");
+    setError("");
 
     try {
       await apiDelete(`/notes/${note.id}`);
       // After deletion, go back to the folder if possible, otherwise the notes list.
       router.push(folderId ? `/folders/${folderId}` : "/notes");
-    } catch {
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -226,7 +234,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         </div>
         {status === "saved" ? <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Saved</p> : null}
         {status === "kept" ? <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Note kept</p> : null}
-        {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">Action failed. Try again.</p> : null}
+        {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">{error}</p> : null}
       </div>
 
       {/* The note viewer switches between edit mode and clean Markdown reading mode. */}

@@ -39,7 +39,7 @@ TONE_PROMPTS = {
 
 def generate_notes(slides: list[dict], tone: NoteTone = NoteTone.concise) -> str:
     if not settings.gemini_api_key:
-        raise GeminiGenerationError("GEMINI_API_KEY is not configured.")
+        raise GeminiGenerationError("AI is not configured yet. Add GEMINI_API_KEY on the backend and redeploy.")
 
     genai.configure(api_key=settings.gemini_api_key)
     model = genai.GenerativeModel(settings.gemini_model)
@@ -61,10 +61,10 @@ def generate_notes(slides: list[dict], tone: NoteTone = NoteTone.concise) -> str
     except Exception as exc:
         if len(parts) > 1:
             return _generate_text_only_notes(model, prompt)
-        raise GeminiGenerationError(f"Gemini generation failed: {exc}") from exc
+        raise GeminiGenerationError(_friendly_gemini_error(exc)) from exc
 
     if not response.text:
-        raise GeminiGenerationError("Gemini returned an empty response.")
+        raise GeminiGenerationError("The AI returned an empty response. Please try again.")
 
     return response.text
 
@@ -83,10 +83,10 @@ def _generate_text_only_notes(model, prompt: str) -> str:
             f"{prompt}\n\nNote: Image analysis failed, so create the best possible notes from the extracted slide text only."
         )
     except Exception as exc:
-        raise GeminiGenerationError(f"Gemini generation failed: {exc}") from exc
+        raise GeminiGenerationError(_friendly_gemini_error(exc)) from exc
 
     if not response.text:
-        raise GeminiGenerationError("Gemini returned an empty response.")
+        raise GeminiGenerationError("The AI returned an empty response. Please try again.")
 
     return response.text
 
@@ -96,3 +96,18 @@ def _slides_with_images(slides: list[dict]) -> list[dict]:
     no_text_slides = [slide for slide in slides_with_bytes if not (slide.get("extracted_text") or slide.get("text"))]
     remaining = [slide for slide in slides_with_bytes if slide.get("extracted_text") or slide.get("text")]
     return [*no_text_slides, *remaining][: settings.gemini_max_images]
+
+
+def _friendly_gemini_error(exc: Exception) -> str:
+    message = str(exc).lower()
+
+    if "quota" in message or "rate" in message or "429" in message or "resource_exhausted" in message:
+        return "Gemini is at its limit right now. Please wait a minute and try again."
+
+    if "api key" in message or "permission" in message or "403" in message or "401" in message:
+        return "The AI key is invalid or missing permission. Check GEMINI_API_KEY on the backend."
+
+    if "timeout" in message or "deadline" in message:
+        return "Gemini took too long to respond. Try again with fewer slides or try later."
+
+    return "Gemini could not generate notes right now. Please try again shortly."

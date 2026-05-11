@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BookOpen, FileText, FolderOpen, Plus, Upload, WandSparkles } from "lucide-react";
+import { BookOpen, CircleAlert, FileText, FolderOpen, Plus, Upload, WandSparkles } from "lucide-react";
 
 import { ActionCard } from "@/components/ActionCard";
 import { EmptyState } from "@/components/EmptyState";
 import { FolderForm } from "@/components/FolderForm";
 import { StatusBadge } from "@/components/StatusBadge";
-import { serverApiGet } from "@/lib/server-api";
+import { serverApiGet, serverFriendlyErrorMessage } from "@/lib/server-api";
 
 type Folder = { id: string; name: string; created_at?: string };
 type Document = { id: string; title?: string; file_name: string; status: string; created_at?: string };
@@ -20,18 +20,19 @@ async function getDashboardData() {
       serverApiGet<Note[]>("/notes")
     ]);
 
-    return { folders, documents, notes };
-  } catch {
+    return { folders, documents, notes, error: "" };
+  } catch (error) {
     return {
       folders: [],
       documents: [],
-      notes: []
+      notes: [],
+      error: serverFriendlyErrorMessage(error)
     };
   }
 }
 
 export default async function DashboardPage() {
-  const { folders, documents, notes } = await getDashboardData();
+  const { folders, documents, notes, error } = await getDashboardData();
 
   return (
     <div className="space-y-8">
@@ -51,45 +52,51 @@ export default async function DashboardPage() {
 
       <FolderForm />
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <SummaryCard icon={<FolderOpen size={18} />} label="Folders" value={folders.length} />
-        <SummaryCard icon={<FileText size={18} />} label="Documents" value={documents.length} />
-        <SummaryCard icon={<BookOpen size={18} />} label="Notes" value={notes.length} />
-      </section>
+      {error ? (
+        <EmptyState icon={<CircleAlert size={20} />} title="Could not load dashboard data" description={error} />
+      ) : (
+        <>
+          <section className="grid gap-4 md:grid-cols-3">
+            <SummaryCard icon={<FolderOpen size={18} />} label="Folders" value={folders.length} />
+            <SummaryCard icon={<FileText size={18} />} label="Documents" value={documents.length} />
+            <SummaryCard icon={<BookOpen size={18} />} label="Notes" value={notes.length} />
+          </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <ActionCard href="/folders" icon={<Plus size={18} />} title="Create folder" description="Start a course space for PDFs and notes." />
-        <ActionCard href={folders[0] ? `/folders/${folders[0].id}` : "/folders"} icon={<Upload size={18} />} title="Upload PDF" description="Add a lecture deck to your first folder." />
-        <ActionCard href={notes[0] ? `/notes/${notes[0].id}` : "/dashboard"} icon={<WandSparkles size={18} />} title="View notes" description="Jump into your most recent generated note." />
-      </section>
+          <section className="grid gap-4 md:grid-cols-3">
+            <ActionCard href="/folders" icon={<Plus size={18} />} title="Create folder" description="Start a course space for PDFs and notes." />
+            <ActionCard href={folders[0] ? `/folders/${folders[0].id}` : "/folders"} icon={<Upload size={18} />} title="Upload PDF" description="Add a lecture deck to your first folder." />
+            <ActionCard href={notes[0] ? `/notes/${notes[0].id}` : "/dashboard"} icon={<WandSparkles size={18} />} title="View notes" description="Jump into your most recent generated note." />
+          </section>
 
-      <section className="grid gap-6 lg:grid-cols-3">
-        <Panel title="Folders">
-          {folders.map((folder) => (
-            <Link key={folder.id} href={`/folders/${folder.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
-              {folder.name}
-            </Link>
-          ))}
-        </Panel>
-        <Panel title="Recent uploads">
-          {documents.slice(0, 5).map((document) => (
-            <Link key={document.id} href={`/documents/${document.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
-              <span className="block font-medium">{document.title || document.file_name}</span>
-              <span className="mt-2 block"><StatusBadge status={document.status} /></span>
-            </Link>
-          ))}
-        </Panel>
-        <Panel title="Recent notes">
-          {notes.slice(0, 5).map((note) => (
-            <Link key={note.id} href={`/notes/${note.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
-              <span className="block font-medium">{note.title}</span>
-              <span className="text-sm text-muted">{note.tone}</span>
-            </Link>
-          ))}
-        </Panel>
-      </section>
+          <section className="grid gap-6 lg:grid-cols-3">
+            <Panel title="Folders">
+              {folders.map((folder) => (
+                <Link key={folder.id} href={`/folders/${folder.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
+                  {folder.name}
+                </Link>
+              ))}
+            </Panel>
+            <Panel title="Recent uploads">
+              {documents.slice(0, 5).map((document) => (
+                <Link key={document.id} href={`/documents/${document.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
+                  <span className="block font-medium">{document.title || document.file_name}</span>
+                  <span className="mt-2 block"><StatusBadge status={document.status} /></span>
+                </Link>
+              ))}
+            </Panel>
+            <Panel title="Recent notes">
+              {notes.slice(0, 5).map((note) => (
+                <Link key={note.id} href={`/notes/${note.id}`} className="block rounded-md border border-line p-3 hover:border-coral">
+                  <span className="block font-medium">{note.title}</span>
+                  <span className="text-sm text-muted">{note.tone}</span>
+                </Link>
+              ))}
+            </Panel>
+          </section>
+        </>
+      )}
 
-      {!folders.length ? (
+      {!error && !folders.length ? (
         <EmptyState icon={<FolderOpen size={20} />} title="No dashboard activity yet" description="Create a course folder, upload a PDF, and generated notes will appear here." />
       ) : null}
     </div>

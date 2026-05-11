@@ -4,16 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
-import { apiDelete } from "@/lib/api";
+import { apiDelete, friendlyErrorMessage } from "@/lib/api";
 
 type DeleteButtonProps = {
   endpoint: string;
   label: string;
   confirmMessage: string;
   redirectTo?: string;
+  onDeleted?: () => void;
 };
 
-export function DeleteButton({ endpoint, label, confirmMessage, redirectTo }: DeleteButtonProps) {
+export function DeleteButton({ endpoint, label, confirmMessage, redirectTo, onDeleted }: DeleteButtonProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -26,14 +27,21 @@ export function DeleteButton({ endpoint, label, confirmMessage, redirectTo }: De
 
     try {
       await apiDelete(endpoint);
+      // Student note:
+      // This event keeps shared UI, like the left sidebar, in sync after a delete.
       window.dispatchEvent(new CustomEvent("study-notes:data-changed", { detail: { endpoint } }));
+      // Student note:
+      // When a parent list gives us onDeleted, it can remove the card instantly.
+      onDeleted?.();
       if (redirectTo) {
         router.push(redirectTo);
       }
-      router.refresh();
-    } catch {
+      if (!onDeleted) {
+        router.refresh();
+      }
+    } catch (error) {
       setIsDeleting(false);
-      window.alert("Delete failed. Try again.");
+      window.alert(friendlyErrorMessage(error));
     }
   }
 

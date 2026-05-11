@@ -1,9 +1,9 @@
-import { FileText } from "lucide-react";
+import { CircleAlert, FileText } from "lucide-react";
 
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { DocumentsList } from "@/components/DocumentsList";
 import { EmptyState } from "@/components/EmptyState";
-import { serverApiGet } from "@/lib/server-api";
+import { serverApiGet, serverFriendlyErrorMessage } from "@/lib/server-api";
 
 type Document = {
   id: string;
@@ -15,11 +15,13 @@ type Document = {
 
 export default async function DocumentsPage() {
   let documents: Document[] = [];
+  let error = "";
 
   try {
     documents = await serverApiGet<Document[]>("/documents");
-  } catch {
+  } catch (caughtError) {
     documents = [];
+    error = serverFriendlyErrorMessage(caughtError);
   }
   const hasProcessingDocuments = documents.some((document) => document.status === "extracting" || document.status === "generating");
 
@@ -31,7 +33,9 @@ export default async function DocumentsPage() {
         <p className="mt-2 text-muted">Uploaded PDFs and their processing states.</p>
       </div>
 
-      {documents.length ? (
+      {error ? (
+        <EmptyState icon={<CircleAlert size={20} />} title="Could not load documents" description={error} />
+      ) : documents.length ? (
         <DocumentsList documents={documents} />
       ) : (
         <EmptyState icon={<FileText size={20} />} title="No documents" description="Upload a PDF inside a folder to see it here." />

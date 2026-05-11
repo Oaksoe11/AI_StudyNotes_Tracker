@@ -4,7 +4,7 @@ import { useState } from "react";
 import { WandSparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { generateNotes, Tone } from "@/lib/api";
+import { friendlyErrorMessage, generateNotes, Tone } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
   { value: "concise", label: "Quick study notes" },
@@ -28,7 +28,7 @@ export function ToneSelect({ documentId, disabled = false }: { documentId: strin
       setStatus("done");
       router.push(`/notes/${response.note_id}`);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Generation failed");
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }

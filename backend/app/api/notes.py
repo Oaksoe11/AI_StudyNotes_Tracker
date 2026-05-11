@@ -15,7 +15,7 @@ def list_notes(current_user: dict = Depends(get_current_user)) -> list[dict]:
     # Show only this user's saved/generated notes.
     response = (
         supabase.table("notes")
-        .select("*")
+        .select("id,title,tone,created_at")
         .eq("user_id", current_user["id"])
         .order("created_at", desc=True)
         .execute()

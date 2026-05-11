@@ -45,7 +45,7 @@ DIFFICULTY_RULES = {
 
 def generate_quiz(slides: list[dict[str, Any]], note_content: str | None = None, difficulty: str = "mixed") -> dict[str, Any]:
     if not settings.gemini_api_key:
-        raise GeminiGenerationError("GEMINI_API_KEY is not configured.")
+        raise GeminiGenerationError("AI is not configured yet. Add GEMINI_API_KEY on the backend and redeploy.")
 
     genai.configure(api_key=settings.gemini_api_key)
     model = genai.GenerativeModel(settings.gemini_model)
@@ -60,16 +60,16 @@ def generate_quiz(slides: list[dict[str, Any]], note_content: str | None = None,
     try:
         response = model.generate_content(prompt)
     except Exception as exc:
-        raise GeminiGenerationError(f"Gemini quiz generation failed: {exc}") from exc
+        raise GeminiGenerationError(_friendly_gemini_error(exc)) from exc
 
     if not response.text:
-        raise GeminiGenerationError("Gemini returned an empty quiz response.")
+        raise GeminiGenerationError("The AI returned an empty quiz response. Please try again.")
 
     quiz = _parse_quiz_json(response.text)
     questions = quiz.get("questions") or []
 
     if len(questions) < 15:
-        raise GeminiGenerationError("Gemini returned fewer than 15 quiz questions.")
+        raise GeminiGenerationError("The AI returned too few quiz questions. Please try again.")
 
     return {
         "title": quiz.get("title") or "Practice quiz",
@@ -86,7 +86,7 @@ def _parse_quiz_json(text: str) -> dict[str, Any]:
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError as exc:
-        raise GeminiGenerationError("Gemini returned quiz data that was not valid JSON.") from exc
+        raise GeminiGenerationError("The AI returned a quiz format the app could not read. Please try again.") from exc
 
 
 def _normalize_question(question: dict[str, Any], index: int, difficulty: str = "mixed") -> dict[str, Any]:
@@ -115,3 +115,18 @@ def _normalize_question(question: dict[str, Any], index: int, difficulty: str = 
         "page_reference": str(question.get("page_reference") or ""),
         "position": index + 1,
     }
+
+
+def _friendly_gemini_error(exc: Exception) -> str:
+    message = str(exc).lower()
+
+    if "quota" in message or "rate" in message or "429" in message or "resource_exhausted" in message:
+        return "Gemini is at its limit right now. Please wait a minute and try again."
+
+    if "api key" in message or "permission" in message or "403" in message or "401" in message:
+        return "The AI key is invalid or missing permission. Check GEMINI_API_KEY on the backend."
+
+    if "timeout" in message or "deadline" in message:
+        return "Gemini took too long to respond. Try again with fewer slides or try later."
+
+    return "Gemini could not generate a quiz right now. Please try again shortly."

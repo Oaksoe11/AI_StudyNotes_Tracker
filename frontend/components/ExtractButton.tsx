@@ -4,20 +4,23 @@ import { useState } from "react";
 import { ScanText } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { extractDocument } from "@/lib/api";
+import { extractDocument, friendlyErrorMessage } from "@/lib/api";
 
 export function ExtractButton({ documentId }: { documentId: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [error, setError] = useState("");
 
   async function handleExtract() {
     setStatus("loading");
+    setError("");
 
     try {
       await extractDocument(documentId);
       setStatus("done");
       router.refresh();
-    } catch {
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -34,7 +37,7 @@ export function ExtractButton({ documentId }: { documentId: string }) {
         {status === "loading" ? "Extracting" : "Extract PDF"}
       </button>
       {status === "done" ? <p className="text-sm text-emerald-700">Slide text and images extracted</p> : null}
-      {status === "error" ? <p className="text-sm text-red-700">Extraction failed</p> : null}
+      {status === "error" ? <p className="text-sm text-red-700">{error}</p> : null}
     </div>
   );
 }

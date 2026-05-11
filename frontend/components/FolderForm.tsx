@@ -4,23 +4,41 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 
-import { apiPost } from "@/lib/api";
+import { apiPost, friendlyErrorMessage } from "@/lib/api";
 
-export function FolderForm() {
+type Folder = {
+  id: string;
+  name: string;
+  created_at?: string;
+};
+
+type FolderFormProps = {
+  onCreated?: (folder: Folder) => void;
+};
+
+export function FolderForm({ onCreated }: FolderFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [error, setError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("saving");
+    setError("");
 
     try {
-      await apiPost("/folders", { name });
+      const folder = await apiPost<Folder>("/folders", { name });
+      // Student note:
+      // If this form lives beside a folder list, update that list without a full page reload.
+      onCreated?.(folder);
       setName("");
       setStatus("saved");
-      router.refresh();
-    } catch {
+      if (!onCreated) {
+        router.refresh();
+      }
+    } catch (error) {
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }
@@ -43,7 +61,7 @@ export function FolderForm() {
         {status === "saving" ? "Creating" : "Create"}
       </button>
       {status === "saved" ? <p className="self-center text-sm text-emerald-700">Folder created</p> : null}
-      {status === "error" ? <p className="self-center text-sm text-red-700">Could not create folder</p> : null}
+      {status === "error" ? <p className="self-center text-sm text-red-700">{error}</p> : null}
     </form>
   );
 }

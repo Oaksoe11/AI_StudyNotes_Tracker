@@ -1,5 +1,5 @@
 import { QuizRunner } from "@/components/QuizRunner";
-import { serverApiGet } from "@/lib/server-api";
+import { serverApiGet, serverFriendlyErrorMessage } from "@/lib/server-api";
 
 type QuizDetail = {
   quiz: {
@@ -27,9 +27,9 @@ export default async function QuizDetailPage({ params }: { params: Promise<{ qui
 
   try {
     data = await serverApiGet<QuizDetail>(`/quizzes/${quizId}`);
-  } catch {
+  } catch (error) {
     data = {
-      quiz: { id: quizId, title: "Quiz not found" },
+      quiz: { id: quizId, title: serverFriendlyErrorMessage(error) },
       questions: []
     };
   }

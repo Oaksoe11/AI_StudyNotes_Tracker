@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ListChecks } from "lucide-react";
 
-import { generateQuiz, QuizDifficulty } from "@/lib/api";
+import { friendlyErrorMessage, generateQuiz, QuizDifficulty } from "@/lib/api";
 
 type GenerateQuizButtonProps = {
   // We can generate from a whole document...
@@ -36,7 +36,7 @@ export function GenerateQuizButton({ documentId, noteId, label = "Generate quiz"
       // After the backend creates the quiz, open it right away.
       router.push(`/quizzes/${response.quiz_id}`);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Quiz generation failed");
+      setError(friendlyErrorMessage(error));
       setStatus("error");
     }
   }

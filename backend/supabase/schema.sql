@@ -29,6 +29,10 @@ create table if not exists public.documents (
   status text not null default 'uploaded'
     check (status in ('uploaded', 'extracting', 'generating', 'completed', 'failed')),
   failure_reason text,
+  -- These progress fields let the UI show messages like "Extracting slide 3 of 20".
+  processing_step text,
+  processing_current integer,
+  processing_total integer,
   page_count integer not null default 0,
   created_at timestamptz not null default now()
 );
@@ -96,11 +100,50 @@ alter table public.documents add column if not exists file_url text;
 alter table public.documents add column if not exists title text;
 alter table public.documents add column if not exists selected_tone text not null default 'concise';
 alter table public.documents add column if not exists failure_reason text;
+alter table public.documents add column if not exists processing_step text;
+alter table public.documents add column if not exists processing_current integer;
+alter table public.documents add column if not exists processing_total integer;
 alter table public.quizzes add column if not exists difficulty text not null default 'mixed';
 alter table public.quizzes add column if not exists is_saved boolean not null default true;
 alter table public.document_pages add column if not exists image_url text;
 alter table public.slides add column if not exists image_url text;
 alter table public.slides add column if not exists image_storage_path text;
+
+-- Student note:
+-- Indexes are like bookmarks for the database.
+-- These match the queries the app runs most often, so lists and detail pages stay fast as data grows.
+create index if not exists folders_user_created_idx
+on public.folders (user_id, created_at desc);
+
+create index if not exists documents_user_created_idx
+on public.documents (user_id, created_at desc);
+
+create index if not exists documents_folder_created_idx
+on public.documents (folder_id, created_at desc);
+
+create index if not exists slides_document_page_idx
+on public.slides (document_id, page_number);
+
+create index if not exists document_pages_document_page_idx
+on public.document_pages (document_id, page_number);
+
+create index if not exists notes_user_created_idx
+on public.notes (user_id, created_at desc);
+
+create index if not exists notes_folder_created_idx
+on public.notes (folder_id, created_at desc);
+
+create index if not exists notes_document_created_idx
+on public.notes (document_id, created_at desc);
+
+create index if not exists quizzes_user_saved_created_idx
+on public.quizzes (user_id, is_saved, created_at desc);
+
+create index if not exists quizzes_folder_created_idx
+on public.quizzes (folder_id, created_at desc);
+
+create index if not exists quiz_questions_quiz_position_idx
+on public.quiz_questions (quiz_id, position);
 
 insert into public.slides (document_id, page_number, extracted_text, image_storage_path, image_url, created_at)
 select document_id, page_number, text, image_storage_path, image_url, created_at

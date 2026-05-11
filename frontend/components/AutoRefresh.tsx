@@ -17,6 +17,10 @@ export function AutoRefresh({ enabled, intervalMs = 3500 }: AutoRefreshProps) {
     }
 
     const timer = window.setInterval(() => {
+      if (document.hidden) {
+        return;
+      }
+
       router.refresh();
     }, intervalMs);
 
