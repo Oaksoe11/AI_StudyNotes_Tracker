@@ -19,6 +19,8 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+# Each router groups related API endpoints so main.py stays small.
+# Example: all document upload/extraction routes live in documents.py.
 app.include_router(folders.router, prefix="/folders", tags=["folders"])
 app.include_router(documents.router, prefix="/documents", tags=["documents"])
 app.include_router(notes.router, prefix="/notes", tags=["notes"])
@@ -30,4 +32,5 @@ async def supabase_not_configured_handler(
     _request: Request,
     exc: SupabaseNotConfiguredError,
 ) -> JSONResponse:
+    # If env vars are missing, return a clear API error instead of a messy crash.
     return JSONResponse(status_code=503, content={"detail": str(exc)})

@@ -1,11 +1,17 @@
+# Render reads this file when deploying from the repo.
+# It tells Render how to build and start the FastAPI backend.
 services:
   - type: web
     name: ai-study-notes-api
     runtime: python
+    # Only deploy the backend folder for this web service.
     rootDir: backend
+    # Install Python packages before starting the API.
     buildCommand: pip install -r requirements.txt
+    # Render provides $PORT automatically, so the app must listen on that port.
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      # sync: false means Render will ask you to enter the secret value in the dashboard.
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -20,4 +26,3 @@ services:
         sync: false
       - key: FRONTEND_ORIGINS
         sync: false
-

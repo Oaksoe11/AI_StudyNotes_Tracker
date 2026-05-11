@@ -38,6 +38,8 @@ Important: use the anon key only in the frontend. Use the service role key only 
 
 Render can use the root `render.yaml` blueprint, or you can create a Web Service manually.
 
+Student note: `render.yaml` is like a recipe card for Render. It says "go into the backend folder, install requirements, then run uvicorn."
+
 Manual settings:
 
 ```txt
@@ -68,6 +70,8 @@ https://your-api.onrender.com
 
 If using Railway instead of Render:
 
+Student note: `backend/railway.json` does the same kind of job as `render.yaml`, but Railway uses JSON. JSON does not allow comments, so the explanation lives here instead of inside that file.
+
 1. Create a new Railway project from GitHub.
 2. Select this repo.
 3. Set the service root directory to `backend`.
@@ -78,6 +82,8 @@ If using Railway instead of Render:
 ## 5. Frontend On Vercel
 
 In Vercel:
+
+Student note: the frontend is deployed separately because Next.js and FastAPI are two different apps. Vercel gets the `frontend/` folder, while Render/Railway gets the `backend/` folder.
 
 ```txt
 Framework Preset: Next.js
@@ -128,4 +134,3 @@ If Gemini generation fails:
 - Check `GEMINI_API_KEY`.
 - Check API quota/rate limits.
 - Try with a smaller PDF first.
-
