@@ -12,6 +12,8 @@ router = APIRouter()
 @router.get("")
 def list_quizzes(current_user: dict = Depends(get_current_user)) -> list[dict]:
     supabase = get_supabase()
+    # List only saved quizzes for the current user.
+    # Unsaved quizzes can still be opened right after generation, but they do not clutter the list.
     response = (
         supabase.table("quizzes")
         .select("*, documents(title,file_name), folders(name)")
@@ -25,6 +27,7 @@ def list_quizzes(current_user: dict = Depends(get_current_user)) -> list[dict]:
 
 @router.post("/generate")
 def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = Depends(get_current_user)) -> dict:
+    # A quiz needs either a document or a note as its source.
     if not payload.document_id and not payload.note_id:
         raise HTTPException(status_code=400, detail="document_id or note_id is required.")
 
@@ -33,6 +36,7 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
     document_id = payload.document_id
 
     if payload.note_id:
+        # If we start from a note, first load the note and use its document_id.
         note_response = (
             supabase.table("notes")
             .select("*")
@@ -46,6 +50,7 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
             raise HTTPException(status_code=404, detail="Note not found")
         document_id = note["document_id"]
 
+    # Always load the source document so we know the folder and ownership.
     document_response = (
         supabase.table("documents")
         .select("*")
@@ -59,6 +64,7 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
         raise HTTPException(status_code=404, detail="Document not found")
 
     try:
+        # Prefer the new slides table for extracted text.
         slides_response = (
             supabase.table("slides")
             .select("*")
@@ -67,6 +73,7 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
             .execute()
         )
     except Exception:
+        # Fallback for older local database versions.
         slides_response = (
             supabase.table("document_pages")
             .select("*")
@@ -79,10 +86,12 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
         raise HTTPException(status_code=400, detail="Extract PDF content before generating a quiz.")
 
     try:
+        # Ask Gemini to make questions from slide text and optional note content.
         quiz_data = generate_quiz(slides_response.data, note.get("content") if note else None, payload.difficulty)
     except GeminiGenerationError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
+    # First save the quiz header row.
     quiz_response = (
         supabase.table("quizzes")
         .insert(
@@ -99,6 +108,7 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
         .execute()
     )
     quiz = quiz_response.data[0]
+    # Then save the 15 question rows linked back to that quiz.
     question_rows = [{**question, "quiz_id": quiz["id"]} for question in quiz_data["questions"]]
     questions_response = supabase.table("quiz_questions").insert(question_rows).execute()
 
@@ -108,6 +118,7 @@ def generate_document_quiz(payload: GenerateQuizRequest, current_user: dict = De
 @router.get("/{quiz_id}")
 def get_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
+    # Load the quiz with its source folder/document names for display.
     quiz_response = (
         supabase.table("quizzes")
         .select("*, documents(title,file_name), folders(name)")
@@ -121,6 +132,7 @@ def get_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)) -> di
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
 
+    # Questions are stored separately so a quiz can have many question records.
     questions_response = (
         supabase.table("quiz_questions")
         .select("*")
@@ -134,15 +146,18 @@ def get_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)) -> di
 
 @router.patch("/{quiz_id}")
 def update_quiz(quiz_id: str, payload: dict, current_user: dict = Depends(get_current_user)) -> dict:
+    # Only these two quiz fields are editable from the frontend.
     allowed = {key: payload[key] for key in ("title", "is_saved") if key in payload}
     if not allowed:
         raise HTTPException(status_code=400, detail="No quiz fields to update.")
     if "title" in allowed:
+        # Do not let the quiz title become blank.
         allowed["title"] = str(allowed["title"]).strip()
         if not allowed["title"]:
             raise HTTPException(status_code=400, detail="Quiz title is required.")
 
     supabase = get_supabase()
+    # The user_id filter keeps users from renaming each other's quizzes.
     response = (
         supabase.table("quizzes")
         .update(allowed)
@@ -160,6 +175,7 @@ def update_quiz(quiz_id: str, payload: dict, current_user: dict = Depends(get_cu
 @router.delete("/{quiz_id}")
 def delete_quiz(quiz_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
+    # Delete only the quiz owned by this user. Questions should cascade in the database.
     response = (
         supabase.table("quizzes")
         .delete()

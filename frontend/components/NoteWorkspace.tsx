@@ -10,6 +10,7 @@ import { GenerateQuizButton } from "@/components/GenerateQuizButton";
 import { apiDelete, generateNotes, Tone, updateNote } from "@/lib/api";
 
 const tones: { value: Tone; label: string }[] = [
+  // These labels are what the student sees in the tone dropdown.
   { value: "concise", label: "Quick study notes" },
   { value: "detailed", label: "Full lecture notes" },
   { value: "exam_prep", label: "Exam prep" },
@@ -31,16 +32,23 @@ type NoteWorkspaceProps = {
 
 export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   const router = useRouter();
+  // Keep local state so the user can edit before saving.
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
+  // This tone is used if the user regenerates the note.
   const [tone, setTone] = useState<Tone>(note.tone);
   const [isEditing, setIsEditing] = useState(false);
+  // One status string controls button loading states and small messages.
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "kept" | "deleting" | "regenerating" | "error">("idle");
+  // New generated notes start with "keep or delete" actions.
   const [showReviewActions, setShowReviewActions] = useState(true);
+  // The folder id might be directly on the note or nested inside the joined document.
   const folderId = note.folder_id ?? note.documents?.folder_id;
+  // This is the file name shown as the source of the note.
   const sourceFile = note.documents?.file_name || note.documents?.title;
 
   const createdDate = useMemo(() => {
+    // useMemo avoids recalculating the formatted date on every render unless the date changes.
     if (!note.created_at) {
       return "No date";
     }
@@ -48,6 +56,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   }, [note.created_at]);
 
   async function handleSave() {
+    // Save the edited title/content to the backend.
     setStatus("saving");
 
     try {
@@ -60,6 +69,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   }
 
   async function handleRegenerate() {
+    // Regeneration needs a source document because the backend uses its extracted slides.
     if (!note.document_id) {
       setStatus("error");
       return;
@@ -68,8 +78,10 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
     setStatus("regenerating");
 
     try {
+      // Ask the backend to create a new note version with the selected tone.
       const response = await generateNotes(note.document_id, tone);
       const next = response.note;
+      // Update the page immediately with the regenerated note.
       setTitle(next.title);
       setContent(next.content);
       setStatus("saved");
@@ -79,11 +91,13 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   }
 
   function handleKeep() {
+    // "Keep" only hides the review box because the note is already saved in the database.
     setShowReviewActions(false);
     setStatus("kept");
   }
 
   async function handleDeleteNote() {
+    // Confirm before deleting because this removes the generated note.
     if (!window.confirm("Delete this generated note?")) {
       return;
     }
@@ -92,6 +106,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
 
     try {
       await apiDelete(`/notes/${note.id}`);
+      // After deletion, go back to the folder if possible, otherwise the notes list.
       router.push(folderId ? `/folders/${folderId}` : "/notes");
     } catch {
       setStatus("error");
@@ -99,12 +114,15 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
   }
 
   function handleExport() {
+    // Make a Markdown file in the browser without needing the backend.
     const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
+    // Make a safe-ish filename from the note title.
     anchor.href = url;
     anchor.download = `${title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "lecture-note"}.md`;
     anchor.click();
+    // Clean up the temporary object URL after the download starts.
     URL.revokeObjectURL(url);
   }
 
@@ -150,6 +168,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         </div>
       </div>
 
+      {/* This box lets the user decide whether the generated version is useful. */}
       {showReviewActions ? (
         <div className="flex flex-col justify-between gap-3 rounded-md border border-line bg-card p-4 shadow-sm md:flex-row md:items-center">
           <div>
@@ -178,6 +197,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         </div>
       ) : null}
 
+      {/* Tone controls for making a new version of the note. */}
       <div className="rounded-md border border-line bg-card p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1 text-sm font-medium">
@@ -209,6 +229,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
         {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">Action failed. Try again.</p> : null}
       </div>
 
+      {/* The note viewer switches between edit mode and clean Markdown reading mode. */}
       <div className="overflow-hidden rounded-md border border-line bg-card shadow-sm">
         {isEditing ? (
           <div className="space-y-4 p-5">
@@ -226,6 +247,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
               <button
                 type="button"
                 onClick={() => {
+                  // Cancel means throw away local edits and go back to the original note.
                   setTitle(note.title);
                   setContent(note.content);
                   setIsEditing(false);
@@ -247,6 +269,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
             </div>
           </div>
         ) : (
+          // Reading mode renders Markdown inside a scrollable container.
           <div className="max-h-[70vh] overflow-y-auto px-4 py-5 sm:px-5 md:px-8 md:py-6">
             <div className="note-markdown mx-auto max-w-3xl">
             <ReactMarkdown>{content}</ReactMarkdown>

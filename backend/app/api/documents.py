@@ -15,7 +15,10 @@ router = APIRouter()
 
 @router.get("")
 def list_documents(current_user: dict = Depends(get_current_user)) -> list[dict]:
+    # Get a Supabase client so this route can talk to the database.
     supabase = get_supabase()
+    # Only return documents that belong to the logged-in user.
+    # This is important because every student should only see their own uploads.
     response = (
         supabase.table("documents")
         .select("*")
@@ -34,17 +37,24 @@ async def upload_document(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ) -> dict:
+    # The browser sends a content type, but we still check it before reading the file.
     if file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
 
+    # Read the uploaded PDF into memory so we can upload it to Supabase Storage.
     pdf_bytes = await file.read()
+    # A fake upload could lie about its content type, so this checks the PDF file header too.
     if not pdf_bytes.startswith(b"%PDF"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF.")
 
+    # Make a fresh id for the document before saving anything.
+    # We use this id in both the database row and the storage path.
     document_id = str(uuid4())
+    # Clean the filename so a weird filename cannot create a weird storage path.
     filename = _safe_pdf_filename(file.filename)
     storage_path = f"{folder_id}/{document_id}/{filename}"
     supabase = get_supabase()
+    # Make sure the folder really belongs to this user before saving the PDF there.
     folder_response = (
         supabase.table("folders")
         .select("id")
@@ -57,6 +67,7 @@ async def upload_document(
     if not folder_response.data:
         raise HTTPException(status_code=404, detail="Folder not found")
 
+    # Upload the original PDF first. Later, after extraction works, we delete this original file.
     upload_bytes(
         supabase,
         storage_path,
@@ -65,6 +76,8 @@ async def upload_document(
     )
     file_url = get_public_url(supabase, storage_path)
 
+    # This is the database record that represents the uploaded PDF.
+    # The selected tone is saved so note generation can reuse it later.
     document_row = {
         "id": document_id,
         "user_id": current_user["id"],
@@ -78,12 +91,15 @@ async def upload_document(
     }
 
     try:
+        # Newer schema has a title column, so this should usually work.
         document_response = supabase.table("documents").insert(document_row).execute()
     except Exception:
+        # Older local databases might not have title yet, so this fallback keeps the MVP usable.
         document_row.pop("title", None)
         document_response = supabase.table("documents").insert(document_row).execute()
 
     document = document_response.data[0]
+    # FastAPI runs this after the response is returned, so the upload feels faster to the user.
     background_tasks.add_task(process_document_extraction, document["id"], current_user["id"])
 
     return {
@@ -96,6 +112,7 @@ async def upload_document(
 @router.post("/{document_id}/extract")
 def extract_document(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     try:
+        # Manual extraction route for retry/debugging. Normal uploads already start this in the background.
         page_count = process_document_extraction(document_id, current_user["id"], raise_errors=True)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -109,6 +126,7 @@ def extract_document(document_id: str, current_user: dict = Depends(get_current_
 def delete_document(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
     try:
+        # First fetch the document so we know which storage files should be cleaned up.
         document_response = (
             supabase.table("documents")
             .select("id,storage_path")
@@ -123,13 +141,17 @@ def delete_document(document_id: str, current_user: dict = Depends(get_current_u
     if not document_response.data:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    # Start with the original PDF path. It may already be deleted after extraction, which is okay.
     storage_paths = [document_response.data.get("storage_path")]
     try:
+        # Collect generated slide images so deleting the document does not leave old files behind.
         slides_response = supabase.table("slides").select("image_storage_path").eq("document_id", document_id).execute()
     except Exception:
+        # Some early versions used document_pages, so keep the fallback for older databases.
         slides_response = supabase.table("document_pages").select("image_storage_path").eq("document_id", document_id).execute()
     storage_paths.extend(slide.get("image_storage_path") for slide in slides_response.data or [])
 
+    # Delete the database row. Related rows should cascade because of the database schema.
     response = (
         supabase.table("documents")
         .delete()
@@ -142,6 +164,8 @@ def delete_document(document_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Document not found")
 
     try:
+        # Clean Supabase Storage after the database delete.
+        # If storage cleanup fails, the document is still deleted, so we do not break the user action.
         remove_storage_objects(supabase, [path for path in storage_paths if path])
     except Exception:
         pass
@@ -151,6 +175,7 @@ def delete_document(document_id: str, current_user: dict = Depends(get_current_u
 
 def process_document_extraction(document_id: str, user_id: str | None = None, raise_errors: bool = False) -> int:
     supabase = get_supabase()
+    # Look up the document. When user_id is passed, this also protects against cross-user access.
     document_query = supabase.table("documents").select("*").eq("id", document_id)
     if user_id:
         document_query = document_query.eq("user_id", user_id)
@@ -158,16 +183,20 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
     document = document_response.data
 
     if not document:
+        # Background tasks should quietly stop, but manual retry should get a clear error.
         if raise_errors:
             raise ValueError("Document not found")
         return 0
 
+    # Tell the UI that extraction started.
     supabase.table("documents").update(
         {"status": DocumentStatus.extracting.value, "failure_reason": None}
     ).eq("id", document_id).execute()
 
     try:
+        # Download the original PDF from storage so PyMuPDF can read it.
         pdf_bytes = supabase.storage.from_(settings.supabase_storage_bucket).download(document["storage_path"])
+        # Extract text and render page images. Settings cap this at a small number for MVP speed.
         pages = extract_pdf_pages(
             pdf_bytes,
             max_pages=settings.pdf_max_pages,
@@ -179,8 +208,10 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
         ensure_storage_bucket(supabase)
 
         for page in pages:
+            # Each rendered slide image gets its own storage path.
             image_storage_path = f"{slide_bucket}/{page['image_name']}"
             upload_bytes(supabase, image_storage_path, page["image_bytes"], "image/png", ensure_bucket=False)
+            # Store the page number, extracted text, and image URL together.
             page_rows.append(
                 {
                     "document_id": document_id,
@@ -193,8 +224,10 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
 
         if page_rows:
             try:
+                # Main table for extracted slide data.
                 supabase.table("slides").upsert(page_rows, on_conflict="document_id,page_number").execute()
             except Exception:
+                # Older database version used document_pages and called the text column "text".
                 legacy_page_rows = [
                     {
                         **row,
@@ -209,8 +242,10 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
                     on_conflict="document_id,page_number",
                 ).execute()
 
+        # After extraction, we only keep filename + slide data, not the original PDF.
         remove_storage_objects(supabase, [document["storage_path"]])
 
+        # Mark extraction as ready. In this MVP, uploaded means "ready to generate notes".
         supabase.table("documents").update(
             {
                 "status": DocumentStatus.uploaded.value,
@@ -220,6 +255,7 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
             }
         ).eq("id", document_id).execute()
     except Exception as exc:
+        # Save the error reason so the frontend can show what went wrong.
         supabase.table("documents").update(
             {
                 "status": DocumentStatus.failed.value,
@@ -236,6 +272,7 @@ def process_document_extraction(document_id: str, user_id: str | None = None, ra
 @router.get("/{document_id}")
 def get_document(document_id: str, current_user: dict = Depends(get_current_user)) -> dict:
     supabase = get_supabase()
+    # Load one document, but only if it belongs to the logged-in user.
     document_response = (
         supabase.table("documents")
         .select("*")
@@ -247,9 +284,12 @@ def get_document(document_id: str, current_user: dict = Depends(get_current_user
     if not document_response.data:
         raise HTTPException(status_code=404, detail="Document not found")
     try:
+        # Prefer the new slides table.
         pages_response = supabase.table("slides").select("*").eq("document_id", document_id).order("page_number").execute()
     except Exception:
+        # Keep older local databases working.
         pages_response = supabase.table("document_pages").select("*").eq("document_id", document_id).order("page_number").execute()
+    # Also load notes linked to this PDF so the detail page can show them.
     notes_response = (
         supabase.table("notes")
         .select("*")
@@ -267,9 +307,11 @@ def get_document(document_id: str, current_user: dict = Depends(get_current_user
 
 
 def _safe_pdf_filename(filename: str | None) -> str:
+    # PurePath strips folders from names like "../../lecture.pdf".
     name = PurePath(filename or "lecture.pdf").name.strip().replace("\x00", "")
     if not name:
         name = "lecture.pdf"
+    # Storage code expects this to be a PDF filename.
     if not name.lower().endswith(".pdf"):
         name = f"{name}.pdf"
     return name

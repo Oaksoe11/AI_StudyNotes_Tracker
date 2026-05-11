@@ -7,24 +7,33 @@ import { ListChecks } from "lucide-react";
 import { generateQuiz, QuizDifficulty } from "@/lib/api";
 
 type GenerateQuizButtonProps = {
+  // We can generate from a whole document...
   documentId?: string;
+  // ...or from a specific generated note.
   noteId?: string;
+  // Optional custom button text.
   label?: string;
 };
 
 export function GenerateQuizButton({ documentId, noteId, label = "Generate quiz" }: GenerateQuizButtonProps) {
   const router = useRouter();
+  // The default is mixed so students get easy, medium, and hard questions.
   const [difficulty, setDifficulty] = useState<QuizDifficulty>("mixed");
+  // If true, the quiz appears later on the quizzes page.
   const [saveQuiz, setSaveQuiz] = useState(true);
+  // Track loading/error so the button can give feedback.
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
 
   async function handleGenerate() {
+    // Clear old errors before trying again.
     setStatus("loading");
     setError("");
 
     try {
+      // Send the chosen difficulty and save option to the backend.
       const response = await generateQuiz({ document_id: documentId, note_id: noteId, difficulty, save_quiz: saveQuiz });
+      // After the backend creates the quiz, open it right away.
       router.push(`/quizzes/${response.quiz_id}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Quiz generation failed");
@@ -62,6 +71,7 @@ export function GenerateQuizButton({ documentId, noteId, label = "Generate quiz"
         <input
           type="checkbox"
           checked={saveQuiz}
+          // This checkbox lets students make a temporary practice quiz if they want.
           onChange={(event) => setSaveQuiz(event.target.checked)}
           className="size-4 rounded border-line"
         />

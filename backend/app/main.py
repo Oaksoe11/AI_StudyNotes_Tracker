@@ -10,7 +10,9 @@ app = FastAPI(title="AI Study Notes Tracker API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    # CORS is the browser rule that decides which frontend domains can call this API.
+    # Locally this is localhost:3000. In production this should include the Vercel URL.
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -54,3 +54,10 @@ uvicorn app.main:app --reload --port 8000
 
 - [MVP technical decisions](docs/MVP_TECHNICAL_DECISIONS.md)
 - [Future architecture upgrades](docs/FUTURE_ARCHITECTURE.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
+
+## License
+
+Copyright (c) 2026 Oak Soe Khant. All rights reserved.
+
+This project is proprietary. Do not copy, distribute, modify, or reuse this code without written permission.
