@@ -25,6 +25,9 @@ export function ToneSelect({ documentId, disabled = false }: { documentId: strin
 
     try {
       const response = await generateNotes(documentId, tone);
+      // Student note:
+      // Let shared UI, like the sidebar and notes tab, know a new note exists.
+      window.dispatchEvent(new CustomEvent("study-notes:data-changed", { detail: { endpoint: "/notes" } }));
       setStatus("done");
       router.push(`/notes/${response.note_id}`);
     } catch (error) {

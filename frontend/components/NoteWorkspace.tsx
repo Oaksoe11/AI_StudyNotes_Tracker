@@ -89,6 +89,9 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
       // Update the page immediately with the regenerated note.
       setTitle(next.title);
       setContent(next.content);
+      // Student note:
+      // Regeneration creates another saved note row, so tell the rest of the app to reload note lists.
+      window.dispatchEvent(new CustomEvent("study-notes:data-changed", { detail: { endpoint: "/notes" } }));
       setStatus("saved");
     } catch (error) {
       setError(friendlyErrorMessage(error));
@@ -98,6 +101,7 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
 
   function handleKeep() {
     // "Keep" only hides the review box because the note is already saved in the database.
+    window.dispatchEvent(new CustomEvent("study-notes:data-changed", { detail: { endpoint: "/notes" } }));
     setShowReviewActions(false);
     setStatus("kept");
   }

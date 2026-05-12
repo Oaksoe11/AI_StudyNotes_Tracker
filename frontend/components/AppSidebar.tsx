@@ -202,9 +202,20 @@ export function AppSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={item.href === "/notes" ? false : undefined}
                 onClick={() => setIsMobileMenuOpen(false)}
-                onMouseEnter={() => prefetchRoute(item.href)}
-                onFocus={() => prefetchRoute(item.href)}
+                onMouseEnter={() => {
+                  // Student note:
+                  // Notes change right after generation, so avoid prefetching stale note-list data.
+                  if (item.href !== "/notes") {
+                    prefetchRoute(item.href);
+                  }
+                }}
+                onFocus={() => {
+                  if (item.href !== "/notes") {
+                    prefetchRoute(item.href);
+                  }
+                }}
                 className={`flex min-h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${
                   isActive ? "bg-coral text-white shadow-sm" : "text-muted hover:bg-mint/45 hover:text-ink dark:hover:bg-mint/20"
                 }`}
