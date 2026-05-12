@@ -2,6 +2,10 @@ import { getSupabaseClient } from "@/lib/supabase";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const requestTimeoutMs = 30000;
+// Student note:
+// AI requests are slower than normal button clicks because Gemini has to think and write.
+// Give AI calls more time so users do not see a fake "server is slow" error while notes are still being made.
+const aiRequestTimeoutMs = 180000;
 
 export class ApiError extends Error {
   status?: number;
@@ -22,7 +26,7 @@ export function friendlyErrorMessage(error: unknown): string {
   }
 
   if (error instanceof DOMException && error.name === "AbortError") {
-    return "The server is taking too long to respond. Please wait a moment and try again.";
+    return "This is taking longer than usual. Please wait a moment, then refresh the page to check whether it finished.";
   }
 
   if (error instanceof TypeError) {
@@ -36,9 +40,9 @@ export function friendlyErrorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}) {
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = requestTimeoutMs) {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), requestTimeoutMs);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await fetch(input, { ...init, signal: controller.signal });
@@ -176,7 +180,7 @@ export async function generateNotes(documentId: string, tone: Tone) {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify({ document_id: documentId, tone })
-  });
+  }, aiRequestTimeoutMs);
 
   await ensureOk(response, "Note generation failed. Please try again shortly.");
 
@@ -213,7 +217,7 @@ export async function generateQuiz(payload: { document_id?: string; note_id?: st
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
     body: JSON.stringify(payload)
-  });
+  }, aiRequestTimeoutMs);
 
   await ensureOk(response, "Quiz generation failed. Please try again shortly.");
 

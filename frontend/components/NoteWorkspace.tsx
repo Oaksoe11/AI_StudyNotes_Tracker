@@ -232,6 +232,9 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
             Regenerate
           </button>
         </div>
+        {status === "regenerating" ? (
+          <p className="mt-3 text-sm text-muted">AI regeneration can take up to a couple minutes. Keep this page open.</p>
+        ) : null}
         {status === "saved" ? <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Saved</p> : null}
         {status === "kept" ? <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">Note kept</p> : null}
         {status === "error" ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">{error}</p> : null}

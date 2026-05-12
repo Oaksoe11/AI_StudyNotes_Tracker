@@ -58,6 +58,11 @@ export function ToneSelect({ documentId, disabled = false }: { documentId: strin
         <WandSparkles size={16} />
         {status === "loading" ? "Generating" : "Generate notes"}
       </button>
+      {status === "loading" ? (
+        <p className="self-center text-sm text-muted">
+          AI generation can take up to a couple minutes. Keep this page open.
+        </p>
+      ) : null}
       {status === "done" ? <p className="self-center text-sm text-emerald-700">Opening note...</p> : null}
       {status === "error" ? <p className="self-center text-sm text-red-700">{error}</p> : null}
     </div>

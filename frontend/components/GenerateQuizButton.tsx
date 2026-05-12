@@ -77,6 +77,9 @@ export function GenerateQuizButton({ documentId, noteId, label = "Generate quiz"
         />
         Save this quiz for future practice
       </label>
+      {status === "loading" ? (
+        <p className="text-sm text-muted">AI quiz generation can take up to a couple minutes. Keep this page open.</p>
+      ) : null}
       {status === "error" ? <p className="text-sm text-red-700 dark:text-red-300">{error}</p> : null}
     </div>
   );
