@@ -1,7 +1,10 @@
 import { cookies } from "next/headers";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const requestTimeoutMs = 12000;
+// Student note:
+// Deployed backends, especially free Render services, can sleep and need time to wake up.
+// Server-rendered pages should wait longer than normal button clicks so users do not see a false error.
+const requestTimeoutMs = 45000;
 
 export class ServerApiError extends Error {
   status?: number;
@@ -19,7 +22,7 @@ export function serverFriendlyErrorMessage(error: unknown): string {
   }
 
   if (error instanceof Error && error.name === "AbortError") {
-    return "The backend is taking too long to respond. Please refresh in a moment.";
+    return "The backend is waking up or responding slowly. Please refresh in about 30 seconds.";
   }
 
   if (error instanceof TypeError) {
