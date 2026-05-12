@@ -1,60 +1,59 @@
 # AI Study Notes Tracker
 
-Upload lecture PDFs, extract slide content, and generate organized AI lecture notes with Gemini.
+Upload lecture PDFs, generate clean AI notes, and practice with quizzes.
+
+Live app: [ai-study-notes-tracker.vercel.app](https://ai-study-notes-tracker.vercel.app)
+
+![Login screen](docs/screenshots/login.png)
+
+## What It Does
+
+- Upload lecture PDFs
+- Extract slide text and images
+- Generate Markdown notes with Gemini
+- Organize notes by folder
+- Generate practice quizzes from notes
+- Save user data with Supabase Auth/Postgres
+
+## How To Use
+
+1. Log in or create an account.
+2. Create a course folder.
+3. Upload a lecture PDF.
+4. Wait for extraction, then generate notes.
+5. Open notes later or create quizzes for practice.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+![Notes page](docs/screenshots/notes.png)
+
+![Quizzes page](docs/screenshots/quizzes.png)
 
 ## Stack
 
 - Frontend: Next.js, React, Tailwind CSS
 - Backend: FastAPI
-- AI: Google Gemini API
-- Database: Supabase Postgres
-- Storage: Supabase Storage
+- AI: Google Gemini
+- Database/Auth/Storage: Supabase
 - PDF parsing: PyMuPDF
 
-## Project Structure
-
-```text
-frontend/   Next.js app and UI
-backend/    FastAPI app, services, and Supabase schema
-```
-
 ## Local Setup
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-cp .env.example .env.local
-npm run dev
-```
-
-### Backend
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-## MVP Flow
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-1. Create a folder for a course.
-2. Upload a lecture PDF into that folder.
-3. Backend stores the PDF in Supabase Storage and creates a document record.
-4. FastAPI starts a background task to extract page text and slide images with PyMuPDF.
-5. User chooses a note tone.
-6. Backend sends extracted content to Gemini.
-7. Generated notes are saved in Supabase and shown in the dashboard.
-
-## Architecture Notes
-
-- [MVP technical decisions](docs/MVP_TECHNICAL_DECISIONS.md)
-- [Future architecture upgrades](docs/FUTURE_ARCHITECTURE.md)
-- [Deployment guide](docs/DEPLOYMENT.md)
+Deployment notes live in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## License
 
