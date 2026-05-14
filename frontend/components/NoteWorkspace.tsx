@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import type { jsPDF as JsPDF } from "jspdf";
 import { ArrowLeft, Check, Download, FileText, RefreshCw, Save, SquarePen, Trash2, X } from "lucide-react";
 
 import { GenerateQuizButton } from "@/components/GenerateQuizButton";
@@ -125,17 +126,13 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
     }
   }
 
-  function handleExport() {
-    // Make a Markdown file in the browser without needing the backend.
-    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    // Make a safe-ish filename from the note title.
-    anchor.href = url;
-    anchor.download = `${title.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "lecture-note"}.md`;
-    anchor.click();
-    // Clean up the temporary object URL after the download starts.
-    URL.revokeObjectURL(url);
+  async function handleExport() {
+    // Student note:
+    // Export directly in the browser so the backend does not need a PDF route yet.
+    const { jsPDF } = await import("jspdf");
+    const pdf = new jsPDF({ unit: "pt", format: "letter" });
+    writeNotePdf(pdf, { title, tone, createdDate, sourceFile, content });
+    pdf.save(`${safeFileName(title) || "lecture-note"}.pdf`);
   }
 
   return (
@@ -294,4 +291,110 @@ export function NoteWorkspace({ note }: NoteWorkspaceProps) {
       </div>
     </article>
   );
+}
+
+type PdfNote = {
+  title: string;
+  tone: string;
+  createdDate: string;
+  sourceFile?: string;
+  content: string;
+};
+
+function writeNotePdf(pdf: JsPDF, note: PdfNote) {
+  // Student note:
+  // Letter pages are 612 x 792 points. These margins keep the PDF readable.
+  const margin = 54;
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const maxWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  pdf.setProperties({
+    title: note.title,
+    subject: "Generated lecture notes",
+    creator: "AI Study Notes Tracker"
+  });
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+  y = writeWrappedLine(pdf, note.title, margin, y, maxWidth, pageHeight, margin, 24);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  const sourceText = note.sourceFile ? `Source: ${note.sourceFile}` : "Source: lecture PDF";
+  y = writeWrappedLine(pdf, `Tone: ${note.tone} | Created: ${note.createdDate} | ${sourceText}`, margin, y + 6, maxWidth, pageHeight, margin, 16);
+
+  y += 18;
+  const lines = note.content.split("\n");
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      y += 10;
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      const level = heading[1].length;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(level === 1 ? 15 : level === 2 ? 13 : 11);
+      y += level === 1 ? 12 : 8;
+      y = writeWrappedLine(pdf, cleanMarkdownText(heading[2]), margin, y, maxWidth, pageHeight, margin, level === 1 ? 20 : 17);
+      continue;
+    }
+
+    const listItem = line.match(/^[-*]\s+(.+)$/);
+    if (listItem) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10.5);
+      y = writeWrappedLine(pdf, `- ${cleanMarkdownText(listItem[1])}`, margin + 14, y, maxWidth - 14, pageHeight, margin, 15);
+      continue;
+    }
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10.5);
+    y = writeWrappedLine(pdf, cleanMarkdownText(line), margin, y, maxWidth, pageHeight, margin, 15);
+  }
+}
+
+function writeWrappedLine(
+  pdf: JsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  pageHeight: number,
+  margin: number,
+  lineHeight: number
+) {
+  const lines = pdf.splitTextToSize(text, maxWidth);
+
+  for (const line of lines) {
+    if (y > pageHeight - margin) {
+      pdf.addPage();
+      y = margin;
+    }
+    pdf.text(line, x, y);
+    y += lineHeight;
+  }
+
+  return y;
+}
+
+function cleanMarkdownText(text: string) {
+  // Student note:
+  // This keeps simple Markdown readable in the PDF without showing extra symbols.
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .trim();
+}
+
+function safeFileName(name: string) {
+  return name.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
 }
